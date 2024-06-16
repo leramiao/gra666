@@ -20,22 +20,17 @@ public class Serwer {
     private ExecutorService service;
     private static Connection connection;
     private static Statement statement;
-    private static SeansManager seansManager;
+    private static SeansManager seansManager = new SeansManager();
 
     public static List<SeansGry> getSeanse(){
         return seansManager.getSeanse();
     }
-    /*public static List<Table> getTables(){
-        return tableManager.getTables();
-    }
-
-     */
 
 
     public void start(int port) throws IOException {
         prepDatabase();
-        seansManager = new SeansManager();
-        seansManager.createSeans(new Table(2));
+        //seansManager = new SeansManager();
+        //seansManager.createSeans(new Table(2));
         serverSocket = new ServerSocket(port);
         //service = new ThreadPoolExecutor(5,100,0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
@@ -82,10 +77,13 @@ public class Serwer {
     }
 
 
-    public static int createSeans(int nPlayers){
-        Table table = new Table(nPlayers);
+    public static int createSeans(int nPlayers, String username){
+        Table table = new Table(nPlayers, username);
         seansManager.createSeans(table);
         return table.getId();
+    }
+    public static void deleteTable(int tableID){
+        seansManager.removeByTableID(tableID);
     }
 
     public static int addPlayerToWaiting(int tableID){

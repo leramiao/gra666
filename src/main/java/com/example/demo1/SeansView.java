@@ -15,6 +15,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import logic.Player;
+import logic.Theme;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,12 +33,23 @@ public class SeansView {
     private ImageView[] opponentCards;
     private ImageView[] tableCards;
     private Stage primaryStage;
-    public int pickedCardID;
     private Image cardBack;
-    private Player activePlayer;
+    private Theme theme;
     int tableID;
 
     public SeansView(Stage primaryStage, int table) {
+        this.theme = Theme.SPACE;
+        this.tableID = table;
+        this.primaryStage = primaryStage;
+        this.playerCards = new ImageView[6];
+        this.opponentCards = new ImageView[6];
+        this.tableCards = new ImageView[2];
+        this.playerSection = new VBox();
+        this.opponentSection = new VBox();
+    }
+
+    public SeansView(Stage primaryStage, int table, Theme theme) {
+        this.theme = theme;
         this.tableID = table;
         this.primaryStage = primaryStage;
         this.playerCards = new ImageView[6];
@@ -50,7 +62,7 @@ public class SeansView {
         VBox buttons = new VBox();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream("media/bg/chic.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream(String.format("media/bg/%s.png", theme.name()))), BackgroundRepeat.REPEAT,null,null,null);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -146,7 +158,7 @@ public class SeansView {
         root.backgroundProperty().set(new Background(bg));
 
         // Create scene and set on stage
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, 720, 730);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Card Game Layout Example");
         primaryStage.show();
@@ -289,8 +301,8 @@ public class SeansView {
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        waitForCardClick();
-
+                                       // waitForCardClick();
+                                        waitForCardClickv0();
                                     }
                                 });
                                 break;
@@ -346,6 +358,19 @@ public class SeansView {
         slot.setVisible(false);
         slot.setImage(null);
 
+    }
+    private void waitForCardClickv0() {
+        for (int i = 0; i < 6; i++) {
+            int cardIndex = i;
+            playerCards[cardIndex].setOnMouseClicked(event -> {
+                System.out.println("You clicked the card " + cardIndex);
+                try {
+                    HelloApplication.client.writeToServer("PUT " + cardIndex);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
     }
     private void initCards(String[] cards) {
         VBox roundCards = new VBox();

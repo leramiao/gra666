@@ -8,17 +8,19 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import logic.SeansGry;
+import logic.SeansManager;
 import logic.Table;
 import logic.TableManager;
 
 import java.io.IOException;
 
 public class CreateTableView {
-    private final TableManager tableManager;
+    private final SeansManager seansManager;
     private final Stage stage;
 
-    public CreateTableView(TableManager tableManager) {
-        this.tableManager = tableManager;
+    public CreateTableView(SeansManager seansManager) {
+        this.seansManager = seansManager;
         this.stage = new Stage();
         this.stage.setTitle("Create a New Table");
     }
@@ -38,8 +40,8 @@ public class CreateTableView {
         createButton.setOnAction(e -> {
             try {
                 int nPlayers = Integer.parseInt(nPlayersField.getText());
-                Table table = new Table(nPlayers);
-                tableManager.addTable(table);
+                SeansGry table = new SeansGry(nPlayers, SceneController.activeUsername);
+                seansManager.addSeans(table);
                 HelloApplication.client.writeToServer("CREATE_TABLE " + nPlayers);
                 stage.close();
             } catch (NumberFormatException ex) {

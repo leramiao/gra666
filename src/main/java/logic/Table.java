@@ -10,24 +10,24 @@ public class Table {
     private int maxPlayers;
     private int playersAmount;
     private int nWaiting;
-    private boolean isFilled;
+    private String owner;
 
-    public Table(int maxPlayers) {
+    public Table(int maxPlayers, String owner) {
         this.id = ++maxID;
         this.playersAmount = 0;
         this.maxPlayers = maxPlayers;
         this.players = new ArrayList<>();
         this.nWaiting = 0;
-        this.isFilled = false;
+        this.owner = owner;
     }
-    public Table(int id, int maxPlayers,int playersAmount) {
+    public Table(int id, int maxPlayers,int playersAmount, String owner) {
         this.id = id;
         maxID = Math.max(maxID, id);
         this.playersAmount = playersAmount;
         this.maxPlayers = maxPlayers;
         this.players = new ArrayList<>();
         this.nWaiting = 0;
-        this.isFilled = maxPlayers == playersAmount;
+        this.owner = owner;
     }
 
     public List<Player> getPlayers() {
@@ -98,5 +98,13 @@ public class Table {
 
     public boolean isFilled() {
         return maxPlayers <= playersAmount;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }

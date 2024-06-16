@@ -1,21 +1,18 @@
 package com.example.demo1;
 
 import javafx.stage.Stage;
-import logic.Table;
-import logic.TableManager;
-import logic.User;
-import logic.UserManager;
+import logic.*;
 
 public class SceneController {
 
     private static Stage primaryStage;
-    public static TableManager tableManager;
+    public static SeansManager seansManager;
 
     public static String activeUsername;
 
     public SceneController(Stage stage) {
         primaryStage = stage;
-        tableManager = new TableManager();
+        seansManager = new SeansManager();
     }
 
 
@@ -43,16 +40,16 @@ public class SceneController {
     }
 
     public static void openCreateTableView(){
-        CreateTableView createTableView = new CreateTableView(tableManager);
+        CreateTableView createTableView = new CreateTableView(seansManager);
         createTableView.display();
     }
     public static void openTableView(Table table){
-        SeansView view = new SeansView(primaryStage, table.getId());
+        SeansView view = new SeansView(primaryStage, table.getId(), Theme.HEAVEN);
         view.display();
     }
 
     public static void clearTables(){
-        tableManager.getTables().clear();
+        seansManager.getSeanse().clear();
     }
 
 

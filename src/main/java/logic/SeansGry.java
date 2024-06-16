@@ -28,6 +28,24 @@ public class SeansGry  {
         //this.players[1] = table.getPlayers().get(1);
     }
 
+    public SeansGry(int maxPlayers, String username) {
+        this.cardStack = new Stack<>();
+        this.cardsOnTable = new Card[3];
+        this.table = new Table(maxPlayers, username);
+        this.players = new Player[2];
+        //this.players[0] = table.getPlayers().get(0);
+        //this.players[1] = table.getPlayers().get(1);
+    }
+
+    public SeansGry(int id, int maxPlayers, int nPlayers, String username) {
+        this.cardStack = new Stack<>();
+        this.cardsOnTable = new Card[3];
+        this.table = new Table(id, maxPlayers, nPlayers, username);
+        this.players = new Player[2];
+        //this.players[0] = table.getPlayers().get(0);
+        //this.players[1] = table.getPlayers().get(1);
+    }
+
 
     public boolean isTableFilled() {
         return table.isFilled();

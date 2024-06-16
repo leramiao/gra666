@@ -13,6 +13,16 @@ public class SeansManager {
     public void addSeans(SeansGry seans){
         seanse.add(seans);
     }
+
+    public void removeByTableID(int tableID){
+        for (SeansGry seans : seanse){
+            if (seans.getTableID() == tableID){
+                seanse.remove(seans);
+                return;
+            }
+        }
+    }
+
     public void createSeans(Table table){
         seanse.add(new SeansGry(table));
     }

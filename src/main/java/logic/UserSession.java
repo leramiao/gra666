@@ -79,6 +79,9 @@ public class UserSession implements Runnable{
                     break;
                 case "LEAVE_TABLE":
                     break;
+                case "DELETE_TABLE":
+                    deleteTable(Integer.parseInt(client_input[1]));
+                    break;
                 case "PUT":
                     int cardID = Integer.parseInt(client_input[1]);
                     break;
@@ -113,19 +116,17 @@ public class UserSession implements Runnable{
         return line;
     }
 
-    public void startGameForPlayer(){
-        try {
-            writeToKlient("START");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void writeToKlient(String line) throws IOException {
         System.out.println(">"+line);
         out.write(line+"\n");
         out.flush();
     }
+
+    public void deleteTable(int tableID){
+        Serwer.deleteTable(tableID);
+    }
+
+
 
     public void addUser(String username, String password) throws IOException {
 
@@ -148,7 +149,7 @@ public class UserSession implements Runnable{
         writeToKlient("FAILURE");
     }
     public void createTable(int nPlayers){
-        Serwer.createSeans(nPlayers);
+        Serwer.createSeans(nPlayers, username);
     }
 
     public void setReady(int tableID) throws IOException {

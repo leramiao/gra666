@@ -365,7 +365,7 @@ public class GameTableView {
         VBox buttons = new VBox();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream("media/bg/chic.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream("media/bg/SPACE.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }

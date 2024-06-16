@@ -20,9 +20,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import logic.Table;
-import logic.TableManager;
-import logic.User;
+import logic.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,23 +29,12 @@ import java.util.ResourceBundle;
 
 public class LoungeView implements  BasicForm {
 
-    public TableView<Table> tablesList;
-    public TableColumn<Table, String> currentPlayersColumn;
-    public Button joinTableButton;
-    @FXML
-    private TableColumn<Table, Integer> tableIDs;
+    public TableView<SeansGry> tablesList;
+    public TableColumn<SeansGry, String> currentPlayersColumn;
+    private TableColumn<SeansGry, Integer> tableIDs;
 
-    //private TableColumn<Table, Integer> nPlayers;
-
-
-    @FXML
-    private Button goToMenuButton;
-    @FXML
-    private Button createTableButton;
+    private TableColumn<SeansGry, String> tableOwners;
     private Stage stage;
-    private SceneController controller;
-    //private static TableManager tableManager;
-
 
 
     public LoungeView() {
@@ -59,7 +46,7 @@ public class LoungeView implements  BasicForm {
             SceneController.clearTables();
             for (int i = 0 ; i < nTables; i++){
                 tableInfo = HelloApplication.client.readFromServer().split(" ");
-                SceneController.tableManager.addTable(new Table(Integer.parseInt(tableInfo[0]),Integer.parseInt(tableInfo[1]),Integer.parseInt(tableInfo[2])));
+                SceneController.seansManager.addSeans(new SeansGry(Integer.parseInt(tableInfo[0]),Integer.parseInt(tableInfo[1]),Integer.parseInt(tableInfo[2]),SceneController.activeUsername));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -71,14 +58,15 @@ public class LoungeView implements  BasicForm {
         Button joinTableButton = new Button("Join table");
         joinTableButton.setOnAction( e -> {
 
-            Table table = tablesList.getSelectionModel().getSelectedItem();
+            SeansGry table = tablesList.getSelectionModel().getSelectedItem();
             try {
-                HelloApplication.client.writeToServer("JOIN_TABLE " + table.getId() + " " + SceneController.activeUsername);
+                if (table == null) return;
+                HelloApplication.client.writeToServer("JOIN_TABLE " + table.getTableID() + " " + SceneController.activeUsername);
                 String response = HelloApplication.client.readFromServer();
                 System.out.println("LOUNGE VIEW, RECIEVED RESPONSE " + response);
                 if (!response.equals("FAIL")){
                     stage.close();
-                    SceneController.openTableView(table);
+                    SceneController.openTableView(table.getTable());
                 }
                 else {
                     showAlert("CANT JOIN", "SORRY");
@@ -94,6 +82,22 @@ public class LoungeView implements  BasicForm {
             SceneController.openCreateTableView();
         });
 
+        Button deleteTableButton = new Button("Delete table");
+        deleteTableButton.setOnAction( e -> {
+            SeansGry table = tablesList.getSelectionModel().getSelectedItem();
+            if (table.getTable().getOwner().equals(SceneController.activeUsername)){
+                try {
+                    HelloApplication.client.writeToServer("DELETE_TABLE " + table.getTableID());
+                    SceneController.seansManager.removeByTableID(table.getTableID());
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+            else {
+                showAlert("ERROR", "NOT YOUR TABLE");
+            }
+        });
+
         Button refreshButton = new Button("Refresh tables");
         refreshButton.setOnAction( e -> {
            refreshTable();
@@ -107,23 +111,26 @@ public class LoungeView implements  BasicForm {
 
         tableIDs = new TableColumn<>("TABLE ID");
         currentPlayersColumn = new TableColumn<>("PLAYERS");
+        tableOwners = new TableColumn<>("OWNER");
 
         tablesList = new TableView<>();
         tablesList.setFixedCellSize(50);
         tablesList.getColumns().add(tableIDs);
         tablesList.getColumns().add(currentPlayersColumn);
+        tablesList.getColumns().add(tableOwners);
 
         HBox buttonBox = new HBox();
         buttonBox.getChildren().add(joinTableButton);
         buttonBox.getChildren().add(createTableButton);
         buttonBox.getChildren().add(toMainMenu);
         buttonBox.getChildren().add(refreshButton);
+        buttonBox.getChildren().add(deleteTableButton);
 
         Scene scene = null;
         stage = new Stage();
         try {
             BorderPane root = new BorderPane();
-            BackgroundImage bg = new BackgroundImage(new Image(new FileInputStream("media/bg/chic.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
+            BackgroundImage bg = new BackgroundImage(new Image(new FileInputStream("media/bg/SPACE.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
             root.backgroundProperty().set(new Background(bg));
 
             tablesList = createTableView();
@@ -142,32 +149,22 @@ public class LoungeView implements  BasicForm {
 
         stage.show();
     }
-    private TableView<Table> createTableView() {
-        tableIDs.setCellValueFactory( t -> new SimpleIntegerProperty(t.getValue().getId()).asObject());
+    private TableView<SeansGry> createTableView() {
+        tableIDs.setCellValueFactory( t -> new SimpleIntegerProperty(t.getValue().getTableID()).asObject());
+        tableOwners.setCellValueFactory(t -> new SimpleStringProperty(t.getValue().getTable().getOwner()));
+        currentPlayersColumn.setCellValueFactory( t -> new SimpleStringProperty(t.getValue().getTable().getPlayersAmount()+"/"+t.getValue().getTable().getMaxPlayers()));
 
-        currentPlayersColumn.setCellValueFactory( t -> new SimpleStringProperty(t.getValue().getPlayersAmount()+"/"+t.getValue().getMaxPlayers()));
-
-
-        tablesList.getItems().setAll(SceneController.tableManager.getTables());
+        //tablesList.getItems().setAll(SceneController.tableManager.getTables());
+        tablesList.getItems().setAll(SceneController.seansManager.getSeanse());
 
 
         return tablesList;
     }
 
     public void refreshTable() {
-        ObservableList<Table> tables = FXCollections.observableArrayList(SceneController.tableManager.getTables());
+        ObservableList<SeansGry> tables = FXCollections.observableArrayList(SceneController.seansManager.getSeanse());
         System.out.println("Observable = " + tables.size());
         tablesList.setItems(tables);
-    }
-
-    public void onGoToMenuButton(ActionEvent event) {
-        stage = (Stage) ((Node)event.getSource()).getScene().getWindow();
-        stage.close();
-        SceneController.openMenuView();
-    }
-    public void onCreateTableButton(ActionEvent event) {
-        stage.close();
-        SceneController.openCreateTableView();
     }
 
 
