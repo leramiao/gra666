@@ -1,9 +1,11 @@
 package com.example.demo1;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -15,30 +17,31 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import logic.Player;
+import logic.Theme;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.concurrent.FutureTask;
 
 public class GameTableView2 {
-    //private Table table;
     private Button amReady;
     private Label opponentName;
     private Label playerName;
     private VBox playerSection;
     private VBox opponentSection;
+    private VBox tableSection;
     private BorderPane root;
     private ImageView[] playerCards;
     private ImageView[] opponentCards;
     private ImageView[] tableCards;
     private Stage primaryStage;
-    public int pickedCardID;
     private Image cardBack;
-    private Player activePlayer;
-    private Thread acceptPlayersThread;
+    private Theme theme;
     int tableID;
 
     public GameTableView2(Stage primaryStage, int table) {
+        this.theme = Theme.SPACE;
         this.tableID = table;
         this.primaryStage = primaryStage;
         this.playerCards = new ImageView[6];
@@ -48,390 +51,22 @@ public class GameTableView2 {
         this.opponentSection = new VBox();
     }
 
-
-    public void waitTillReady(){
-
-        amReady.setDisable(false);
-    }
-    public void initGame() {
-        //acceptPlayersThread.interrupt();
-        System.out.println("init game !");
-
-        try {
-            this.cardBack = new Image(new FileInputStream("media/cards/MYSTERY.png"));
-            System.out.println("assign sprite !");
-        } catch (FileNotFoundException e) {
-            System.out.println("no card");
-            throw new RuntimeException(e);
-        }
-        System.out.println("remove button !");
-        amReady.setVisible(false);
-        //leaveTableButton.setVisible(false);
-        /*
-        try {
-            //initCards();
-            System.out.println("cards inti");
-        } catch (FileNotFoundException e) {
-            System.out.println("no cards");
-            throw new RuntimeException(e);
-        }
-
-         */
-        //System.out.println("about to enter game loop");
-        gameLoop();
-
-    }
-    /*
-    Get sprite from slot A, assign it to slot B, clear slot A
-     */
-    public void moveCard(int posA, int posB){
-        ImageView slotA = getSlotByPosition(posA);
-        Image sprite = slotA.getImage();
-        slotA.setVisible(false);
-        slotA.setImage(null); //rethink later
-        getSlotByPosition(posB).setImage(sprite);
-    }
-    /*
-    Get sprite from file, assign it to slot
-     */
-    public void putCard(int pos, String filename) throws FileNotFoundException {
-        switch (pos){
-            case 0, 1, 2:
-                tableCards[pos].setVisible(true);
-                tableCards[pos].setImage(new Image(new FileInputStream(filename)));
-                break;
-            case 3,4,5,6,7,8:
-                playerCards[pos-3].setImage(new Image(new FileInputStream(filename)));
-                playerCards[pos-3].setVisible(true);
-                break;
-            case 9,10,11,12,13,14:
-                opponentCards[pos-9].setVisible(true);
-                opponentCards[pos-9].setImage(new Image(new FileInputStream(filename)));
-                break;
-        }
-    }
-    public void drawCardForOpponent(int n){
-        int ctr = 0;
-        for (int i = 0; i < 6; i++){
-            if (!opponentCards[i].isVisible()){
-                opponentCards[i].setVisible(true);
-                opponentCards[i].setImage(cardBack);
-                ctr++;
-            }
-            if (ctr == n) return;
-        }
-    }
-    public void drawCardForOpponent(){
-        for (int i = 0; i < 6; i++){
-            if (!opponentCards[i].isVisible()){
-                opponentCards[i].setVisible(true);
-                opponentCards[i].setImage(cardBack);
-                return;
-            }
-        }
-    }
-    public void undrawCardForOpponent(int n){
-        int ctr = 0;
-        for (int i = 0; i < 6; i++){
-            if (opponentCards[i].isVisible()){
-
-                removeCard(9+i);
-                ctr++;
-            }
-            if (ctr == n) return;
-        }
-    }
-    public void undrawCardForOpponent(){
-        for (int i = 0; i < 6; i++){
-            if (opponentCards[i].isVisible()){
-                removeCard(9+i);
-                return;
-            }
-        }
-    }
-    /*
-    Empty the slot
-     */
-    public void removeCard(int pos){
-        ImageView slot = getSlotByPosition(pos);
-        slot.setVisible(false);
-        slot.setImage(null);
-
+    public GameTableView2(Stage primaryStage, int table, Theme theme) {
+        this.theme = theme;
+        this.tableID = table;
+        this.primaryStage = primaryStage;
+        this.playerCards = new ImageView[6];
+        this.opponentCards = new ImageView[6];
+        this.tableCards = new ImageView[2];
+        this.playerSection = new VBox();
+        this.opponentSection = new VBox();
     }
 
-    /*
-    Get slot (ImageView) by position
-     */
-    public ImageView getSlotByPosition(int pos) {
-        return switch (pos) {
-            case 0, 1, 2 -> tableCards[pos];
-            case 3, 4, 5, 6, 7, 8 -> playerCards[pos - 3];
-            case 9, 10, 11, 12, 13, 14 -> opponentCards[pos - 9];
-            default -> null;
-        };
-    }
-
-    public void preGameLoop(){
-        Task<Void> task = new Task<Void>() {
-            boolean done = false;
-            @Override
-            protected Void call() throws Exception {
-                while (!done) {
-                    System.out.println("Waitnig for command GTV");
-                    String[] command = HelloApplication.client.readFromServer().split(" ");
-                    System.out.println("received GTV command " + command[0]);
-                    switch (command[0]) {
-                        case "ACCEPT_PLAYER":
-                            System.out.println("accepting playr");
-                            System.out.println("accepting " +  command[1]);
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    acceptPlayer(command[1]);
-                                }
-                            });
-                            break;
-                        case "FULL":
-                            System.out.println("full");
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    waitTillReady();
-                                }
-                            });
-                            break;
-                        case "START":
-                            System.out.println("starting");
-                            initGame();
-                            done = true;
-                            //System.out.println("did not expect to reach here");
-                            break;
-                        default:
-                            System.out.println("UNKNOWN COMMANd! gametableview222");
-                            break;
-                    }
-                    System.out.println("Processed command GTV");
-                }
-                return null;
-            }
-
-        };
-
-        acceptPlayersThread = new Thread(task);
-        acceptPlayersThread.start();
-    }
-
-    public void gameLoop() {
-        System.out.println("in game loop");
-        Task<Void> task = new Task<>() {
-            @Override
-            protected Void call() throws Exception {
-                while (true) {
-                    System.out.println("Waitnig for command GTV");
-                    String[] command = HelloApplication.client.readFromServer().split(" ");
-                    System.out.println("received command " + command[0]);
-                    switch (command[0]) {
-                        case "ACCEPT_PLAYER":
-                            System.out.println("accepting playr");
-                            System.out.println("accepting " +  command[1]);
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    acceptPlayer(command[1]);
-                                }
-                            });
-                            break;
-                        case "FULL":
-                            System.out.println("full");
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    waitTillReady();
-                                }
-                            });
-                            break;
-                        case "START":
-                            System.out.println("starting");
-                            initGame();
-                            break;
-                        case "COLLECT_CARDS":
-                            initCards();
-                            break;
-                        case "CLEAR":
-                            removeCard(0);
-                            removeCard(1);
-                            break;
-                        case "ATTACK":
-                            playerName.setTextFill(Paint.valueOf("green"));
-                            opponentName.setTextFill(Paint.valueOf("white"));
-                            break;
-                        case "DEFEND":
-                            opponentName.setTextFill(Paint.valueOf("green"));
-                            playerName.setTextFill(Paint.valueOf("white"));
-                            break;
-                        case "ACCEPT_CARD":
-                            putCard(0,command[1]);
-                            undrawCardForOpponent();
-                            break;
-                        case "REQUEST_CARD":
-                            System.out.println("  card  requested");
-                            waitForCardClick();
-                            break;
-                        case "PUT_CARD":
-                            putCard(Integer.parseInt(command[1]), command[2]);
-                            break;
-                        case "CARD_ACCEPTED":
-                            int index = Integer.parseInt(command[1]);
-                            putCard(1,activePlayer.getCards()[index].getSpriteFilename());
-                            removeCard(index+3);
-                            break;
-
-                        default:
-                            System.out.println("UNKNOWN COMMANd! gametableview");
-                            break;
-                    }
-                    System.out.println("Processed command GTV");
-                }
-            }
-        };
-
-        new Thread(task).start();
-    }
-
-
-
-    private Task<Void> waitForCardClick() {
-        Task<Void> task = new Task<>(){
-            @Override
-            protected Void call() throws Exception {
-
-                for (int i = 0; i < 6; i++) {
-                    int cardIndex = i;
-                    playerCards[cardIndex].setOnMouseClicked(event -> {
-                        System.out.println("You clicked the card " + cardIndex);
-                        try {
-                            HelloApplication.client.writeToServer("PUT " + String.valueOf(cardIndex));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-                return null;
-            }
-        };
-
-        new Thread(task).start();
-        return task;
-    }
-
-    public void defend() {
-        try {
-            String[] command = HelloApplication.client.readFromServer().split(" ");
-            System.out.println(command[0] + " !!!!");
-            if (command[0].equals("ACCEPT_CARD")){
-                opponentCards[opponentCards.length - 1].setVisible(false);
-                tableCards[0].setImage(new Image(new FileInputStream(command[1])));
-                tableCards[0].setVisible(true);
-            }
-            command = HelloApplication.client.readFromServer().split(" ");
-            if (command[0].equals("REQUEST_CARD")){
-                opponentCards[opponentCards.length - 1].setVisible(false);
-                tableCards[0].setImage(new Image(new FileInputStream(command[1])));
-                tableCards[0].setVisible(true);
-            }
-
-            command = HelloApplication.client.readFromServer().split(" ");
-            if (command[0].equals("CARD_ACCEPTED")) {
-                System.out.println("your card accepted");
-                int cardIndex = Integer.parseInt(command[1]);
-                playerCards[cardIndex].setVisible(false);
-                tableCards[1].setImage(playerCards[cardIndex].getImage());
-                tableCards[1].setVisible(true);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    public void attack() {
-        try {
-            String[] command = HelloApplication.client.readFromServer().split(" ");
-            if (command[0].equals("CARD_ACCEPTED")) {
-                int cardIndex = Integer.parseInt(command[1]);
-                playerCards[cardIndex].setVisible(false);
-                tableCards[1].setVisible(true);
-                tableCards[1].setImage(playerCards[cardIndex].getImage());
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void initCards() {
-            VBox roundCards = new VBox();
-            HBox tableMyCards = new HBox();
-            HBox tableOppCards = new HBox();
-
-            for (int i = 0; i < 6; i++) {
-                try {
-                    String cardData = HelloApplication.client.readFromServer();
-                    System.out.println(cardData);
-                    int index = i; // final or effectively final variable to use in Platform.runLater
-                    Platform.runLater(() -> {
-                        playerCards[index] = new ImageView();
-                        try {
-                            putCard(3 + index, cardData);
-                        } catch (FileNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }
-                        tableMyCards.getChildren().add(playerCards[index]);
-                    });
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            for (int i = 0; i < 6; i++) {
-                int index = i; // final or effectively final variable to use in Platform.runLater
-                Platform.runLater(() -> {
-                    try {
-                        opponentCards[index] = new ImageView(new Image(new FileInputStream("media/cards/MYSTERY.png")));
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                    tableOppCards.getChildren().add(opponentCards[index]);
-                });
-            }
-
-            for (int i = 0; i < 2; i++) {
-                int index = i; // final or effectively final variable to use in Platform.runLater
-                Platform.runLater(() -> {
-                    try {
-                        tableCards[index] = new ImageView(new Image(new FileInputStream("media/cards/BLANK.png")));
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                    tableCards[index].setVisible(false);
-                    roundCards.getChildren().add(tableCards[index]);
-                });
-            }
-
-            Platform.runLater(() -> {
-                tableMyCards.setAlignment(Pos.CENTER);
-                tableOppCards.setAlignment(Pos.CENTER);
-                roundCards.setAlignment(Pos.CENTER);
-                roundCards.setVisible(true);
-                root.setCenter(roundCards);
-                playerSection.getChildren().add(0, tableMyCards);
-                opponentSection.getChildren().add(tableOppCards);
-            });
-        }
     private void initialize() {
         VBox buttons = new VBox();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream("media/bg/SPACE.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream(String.format("media/bg/%s.png", theme.name()))), BackgroundRepeat.REPEAT,null,null,null);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -479,31 +114,7 @@ public class GameTableView2 {
         opponentSection = new VBox(10);
         opponentSection.setVisible(false);
 
-        /*
-        loadPlayersInfo();
-        if (opponentName.getText() == null) {
-            Task<String> task = new Task<>() {
-                @Override
-                protected String call() {
-                    try {
-                        String username = HelloApplication.client.readFromServer();
-                        table.joinAsPlayer(username, UserSession.sessions.get(username));
-                        updateMessage(username);
-                        opponentSection.setVisible(true);
-                        if (table.isFilled()) {
-                            amReady.setDisable(false);
-                        }
-                        return username;
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-            opponentName.textProperty().bind(task.messageProperty());
-            new Thread(task).start();
-        }
 
-         */
 
         // Profile picture ImageViews
         ImageView opponentProfileImageView = new ImageView(opponentProfileImage);
@@ -543,7 +154,7 @@ public class GameTableView2 {
         buttons.setAlignment(Pos.CENTER);
 
         // Main layout
-         root = new BorderPane();
+        root = new BorderPane();
         root.setPadding(new Insets(10));
         root.setTop(opponentSection);
         root.setBottom(playerSection);
@@ -551,7 +162,7 @@ public class GameTableView2 {
         root.backgroundProperty().set(new Background(bg));
 
         // Create scene and set on stage
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, 720, 730);
         primaryStage.setScene(scene);
         primaryStage.setTitle("Card Game Layout Example");
         primaryStage.show();
@@ -563,42 +174,368 @@ public class GameTableView2 {
         initialize();
     }
 
-    public void acceptPlayer(String username){
+    public void acceptPlayer(String username) {
         System.out.println("accepting " + username);
         opponentName.setText(username);
         opponentSection.setVisible(true);
     }
-    public void initPlayer(){
+
+    public void initPlayer() {
         String myUsername = SceneController.activeUsername;
         playerName.setText(myUsername);
     }
 
-    /*
-    public void loadPlayersInfo() {
-        String myUsername = SceneController.activeUsername;
-        this.activePlayer = table.joinAsPlayer(myUsername, UserSession.sessions.get(myUsername));
-        playerName.setText(myUsername);
-        try {
-            int nPlayers = Integer.parseInt(HelloApplication.client.readFromServer());
-            for (int i = 0; i < nPlayers; i++) {
-                String username = HelloApplication.client.readFromServer();
-                if (!username.equals(myUsername)) {
-                    table.joinAsPlayer(username, UserSession.sessions.get(username));
-                    opponentName.setText(username);
-                    opponentSection.setVisible(true);
-                }
-            }
-            if (table.isFilled()) {
-                System.out.println("FULL");
-                amReady.setDisable(false);
-            } else {
-                System.out.println(table.getPlayersAmount() + " out of " + table.getMaxPlayers());
-            }
-        } catch (IOException e) {
-            System.out.println("smth wrong!!");
-            throw new RuntimeException(e);
+    public void putCard(int pos, String filename) throws FileNotFoundException {
+        switch (pos) {
+            case 0, 1, 2:
+                tableCards[pos].setVisible(true);
+                tableCards[pos].setImage(new Image(new FileInputStream(filename)));
+                break;
+            case 3, 4, 5, 6, 7, 8:
+                playerCards[pos - 3].setImage(new Image(new FileInputStream(filename)));
+                playerCards[pos - 3].setVisible(true);
+                break;
+            case 9, 10, 11, 12, 13, 14:
+                opponentCards[pos - 9].setVisible(true);
+                opponentCards[pos - 9].setImage(new Image(new FileInputStream(filename)));
+                break;
         }
     }
 
+
+    public void waitTillReady() {
+
+        amReady.setDisable(false);
+    }
+
+    public void moveCard(int posA, int posB) {
+        ImageView slotA = getSlotByPosition(posA);
+        Image sprite = slotA.getImage();
+        slotA.setVisible(false);
+        slotA.setImage(null); //rethink later
+        getSlotByPosition(posB).setImage(sprite);
+    }
+
+    public ImageView getSlotByPosition(int pos) {
+        return switch (pos) {
+            case 0, 1, 2 -> tableCards[pos];
+            case 3, 4, 5, 6, 7, 8 -> playerCards[pos - 3];
+            case 9, 10, 11, 12, 13, 14 -> opponentCards[pos - 9];
+            default -> null;
+        };
+    }
+
+    public void gameLoop() {
+        System.out.println("in game loop");
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                while (true) {
+                    //System.out.println("Waitnig for command GTV");
+                    try {
+                        String[] command = HelloApplication.client.readFromServer().split(" ");
+                        System.out.println("received command " + command[0]);
+                        switch (command[0]) {
+                            case "ACCEPT_PLAYER":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        acceptPlayer(command[1]);
+                                    }
+                                });
+                                break;
+                            case "FULL":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        waitTillReady();
+                                    }
+                                });
+                                break;
+                            case "START":
+                                initGame();
+                                break;
+                            case "COLLECT_CARDS":
+                                String[] cards = new String[6];
+                                for (int i = 0; i < 6; i++) {
+                                    cards[i] = HelloApplication.client.readFromServer();
+                                }
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        initCards(cards);
+                                    }
+                                });
+                                break;
+                            case "COLLECT_CARD":
+                                String cardinfo = command[1];
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        takeCard(cardinfo);
+                                    }
+                                });
+                                break;
+                            case "OPP_COLLECT_CARD":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        drawCardForOpponent();
+                                    }
+                                });
+                                break;
+                            case "CLEAR":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        removeCard(0);
+                                        removeCard(1);
+
+                                    }
+                                });
+                                break;
+                            case "ATTACK":
+                                playerName.setTextFill(Paint.valueOf("green"));
+                                opponentName.setTextFill(Paint.valueOf("white"));
+                                break;
+                            case "DEFEND":
+                                opponentName.setTextFill(Paint.valueOf("green"));
+                                playerName.setTextFill(Paint.valueOf("white"));
+                                break;
+                            case "ACCEPT_CARD":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            putCard(0, command[1]);
+                                            undrawCardForOpponent();
+                                        } catch (FileNotFoundException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
+                                break;
+                            case "REQUEST_CARD":
+
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // waitForCardClick();
+                                        unlockCards();
+                                    }
+                                });
+                                break;
+                            case "PUT_CARD":
+                                putCard(Integer.parseInt(command[1]), command[2]);
+                                break;
+                            case "CARD_ACCEPTED":
+                                lockCards();
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        //lockCards();
+                                        int cardIndex = Integer.parseInt(command[1]);
+                                        String cardInfo = command[2];
+                                        try {
+                                            putCard(1, cardInfo);
+                                        } catch (FileNotFoundException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                        removeCard(cardIndex + 3);
+
+                                    }
+                                });
+                                break;
+
+                            default:
+                                System.out.println("UNKNOWN COMMANd! gametableview");
+                                break;
+                        }
+
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    //System.out.println("Processed command GTV");
+                }
+            }
+        };
+        new Thread(task).start();
+    }
+
+    public void undrawCardForOpponent() {
+        for (int i = 0; i < 6; i++) {
+            if (opponentCards[i].isVisible()) {
+                removeCard(9 + i);
+                return;
+            }
+        }
+    }
+
+    /*
+    Empty the slot
      */
+    public void removeCard(int pos) {
+        ImageView slot = getSlotByPosition(pos);
+        slot.setVisible(false);
+        slot.setImage(null);
+
+    }
+
+    private void takeCard(String cardinfo) {
+        for (int i = 0; i < 6; i++) {
+            if (!playerCards[i].isVisible()) {
+                try {
+                    putCard(i + 3, cardinfo);
+                    return;
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private void initCards(String[] cards) {
+        VBox roundCards = new VBox();
+        HBox tableMyCards = new HBox();
+        HBox tableOppCards = new HBox();
+
+        for (int i = 0; i < 6; i++) {
+
+
+            playerCards[i] = new ImageView();
+            try {
+                putCard(3 + i, cards[i]);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            tableMyCards.getChildren().add(playerCards[i]);
+        }
+
+        for (int i = 0; i < 6; i++) {
+
+            try {
+                opponentCards[i] = new ImageView(new Image(new FileInputStream("media/cards/MYSTERY.png")));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            tableOppCards.getChildren().add(opponentCards[i]);
+        }
+        activateCards();
+        lockCards();
+
+        for (int i = 0; i < 2; i++) {
+            try {
+                tableCards[i] = new ImageView(new Image(new FileInputStream("media/cards/BLANK.png")));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            tableCards[i].setVisible(false);
+            roundCards.getChildren().add(tableCards[i]);
+        }
+
+
+        tableMyCards.setAlignment(Pos.CENTER);
+        tableOppCards.setAlignment(Pos.CENTER);
+        roundCards.setAlignment(Pos.CENTER);
+        roundCards.setVisible(true);
+        root.setCenter(roundCards);
+        playerSection.getChildren().add(0, tableMyCards);
+        opponentSection.getChildren().add(tableOppCards);
+    }
+
+    private Task<Void> waitForCardClickv0() {
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+
+                for (int i = 0; i < 6; i++) {
+                    int cardIndex = i;
+                    playerCards[cardIndex].setOnMouseClicked(event -> {
+                        System.out.println("You clicked the card " + cardIndex);
+                        try {
+                            HelloApplication.client.writeToServer("PUT " + String.valueOf(cardIndex));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+                return null;
+            }
+        };
+
+        new Thread(task).start();
+        return task;
+    }
+
+    private void lockCards(){
+        for (ImageView card : playerCards){
+            card.setDisable(true);
+        }
+    }
+    private void unlockCards(){
+        for (ImageView card : playerCards){
+            card.setDisable(false);
+        }
+    }
+
+    private void activateCards() {
+        for (int i = 0; i < 6; i++) {
+            int cardIndex = i;
+            playerCards[cardIndex].setOnMouseClicked(event -> {
+                System.out.println("You clicked the card " + cardIndex);
+                try {
+                    HelloApplication.client.writeToServer("PUT " + cardIndex);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
+    public void initGame() {
+        //acceptPlayersThread.interrupt();
+        System.out.println("init game !");
+
+        try {
+            this.cardBack = new Image(new FileInputStream("media/cards/MYSTERY.png"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        playerSection.setVisible(true);
+
+        tableSection.setVisible(true);
+        for (Node node : tableSection.getChildren()){
+            node.setVisible(true);
+        }
+        amReady.setVisible(false);
+        tableCards[2].setVisible(true);
+        tableCards[2].setImage(cardBack);
+
+    }
+
+    public void drawCardForOpponent(int n) {
+        int ctr = 0;
+        for (int i = 0; i < 6; i++) {
+            if (!opponentCards[i].isVisible()) {
+                opponentCards[i].setVisible(true);
+                opponentCards[i].setImage(cardBack);
+                ctr++;
+            }
+            if (ctr == n) return;
+        }
+    }
+
+    public void drawCardForOpponent() {
+        for (int i = 0; i < 6; i++) {
+            if (!opponentCards[i].isVisible()) {
+                opponentCards[i].setVisible(true);
+                opponentCards[i].setImage(cardBack);
+                return;
+            }
+
+        }
+    }
 }

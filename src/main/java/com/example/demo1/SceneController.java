@@ -8,10 +8,12 @@ public class SceneController {
     private static Stage primaryStage;
     public static SeansManager seansManager;
 
+    public static Theme theme;
     public static String activeUsername;
 
     public SceneController(Stage stage) {
         primaryStage = stage;
+        theme = Theme.HEAVEN;
         seansManager = new SeansManager();
     }
 
@@ -26,6 +28,12 @@ public class SceneController {
     {
         RegisterForm registrationForm = new RegisterForm();
         registrationForm.display();
+
+    }
+    public static void openSettingsView()
+    {
+        SettingsView settingsView = new SettingsView();
+        settingsView.display();
 
     }
     public static void openMenuView()
@@ -44,7 +52,7 @@ public class SceneController {
         createTableView.display();
     }
     public static void openTableView(Table table){
-        SeansView view = new SeansView(primaryStage, table.getId(), Theme.HEAVEN);
+        SeansView view = new SeansView(primaryStage, table.getId(), theme);
         view.display();
     }
 

@@ -24,6 +24,7 @@ public class SeansGry  {
         this.cardsOnTable = new Card[3];
         this.table = table;
         this.players = new Player[2];
+        phase2 = false;
         //this.players[0] = table.getPlayers().get(0);
         //this.players[1] = table.getPlayers().get(1);
     }
@@ -33,6 +34,7 @@ public class SeansGry  {
         this.cardsOnTable = new Card[3];
         this.table = new Table(maxPlayers, username);
         this.players = new Player[2];
+        phase2 = false;
         //this.players[0] = table.getPlayers().get(0);
         //this.players[1] = table.getPlayers().get(1);
     }
@@ -108,6 +110,7 @@ public class SeansGry  {
         //putCard(attacker.getUsername(), Integer.parseInt(line.split(" ")[1]), 0);
         String cardinfo = line.split(" ")[1];
         int cardID = Integer.parseInt(cardinfo);
+        cardsOnTable[0] =  attacker.getCards()[cardID];
         writeToPlayer(defender, "ACCEPT_CARD " + attacker.getCards()[cardID].getSpriteFilename());
         //writeToPlayer(attacker, "CARD_ACCEPTED " + attacker.getCards().get(Integer.parseInt(cardinfo)).getSpriteFilename());
         writeToPlayer(attacker, "CARD_ACCEPTED " + cardID + " " +attacker.getCards()[cardID].getSpriteFilename());
@@ -117,12 +120,45 @@ public class SeansGry  {
         line = readFromPlayer(defender);
         cardinfo = line.split(" ")[1];
         cardID = Integer.parseInt(cardinfo);
-        writeToPlayer(attacker, "ACCEPT_CARD " + defender.getCards()[cardID].getSpriteFilename());
-        writeToPlayer(defender, "CARD_ACCEPTED " + cardID + " " + defender.getCards()[cardID].getSpriteFilename());
-        defender.loseCard(cardID);
+        cardsOnTable[1] =  defender.getCards()[cardID];
 
-        writeToPlayer(defender, "CLEAR");
-        writeToPlayer(attacker, "CLEAR");
+        if (!cardStack.empty()){
+            writeToPlayer(attacker, "ACCEPT_CARD " + defender.getCards()[cardID].getSpriteFilename());
+            writeToPlayer(defender, "CARD_ACCEPTED " + cardID + " " + defender.getCards()[cardID].getSpriteFilename());
+            defender.loseCard(cardID);
+            writeToPlayer(defender, "CLEAR");
+            writeToPlayer(attacker, "CLEAR");
+            Card tmp;
+            if (!cardStack.empty()){
+                tmp =  cardStack.pop();
+                writeToPlayer(defender, "COLLECT_CARD " + tmp.getSpriteFilename());
+                writeToPlayer(attacker, "OPP_COLLECT_CARD");
+                defender.takeCard(tmp);
+            }
+            if (!cardStack.empty()){
+                tmp =  cardStack.pop();
+                writeToPlayer(attacker, "COLLECT_CARD " + tmp.getSpriteFilename());
+                writeToPlayer(defender, "OPP_COLLECT_CARD");
+                attacker.takeCard(tmp);
+            }
+
+        }
+        else {
+            while (!isCardGreater(cardsOnTable[0],cardsOnTable[1])){
+                System.out.println("bad card");
+                line = readFromPlayer(defender);
+                cardinfo = line.split(" ")[1];
+                cardID = Integer.parseInt(cardinfo);
+                cardsOnTable[1] =  defender.getCards()[cardID];
+            }
+            System.out.println("good card");
+
+            writeToPlayer(attacker, "ACCEPT_CARD " + defender.getCards()[cardID].getSpriteFilename());
+            writeToPlayer(defender, "CARD_ACCEPTED " + cardID + " " + defender.getCards()[cardID].getSpriteFilename());
+            defender.loseCard(cardID);
+            writeToPlayer(defender, "CLEAR");
+            writeToPlayer(attacker, "CLEAR");
+        }
 
     }
 
@@ -138,12 +174,10 @@ public class SeansGry  {
     public void gameLoop(){
         while (true){
             if (isOver()){
-                System.out.println("done");
                 break;
             }
             round();
         }
-        System.out.println("doneee");
     }
     public void generateCards(){
         for (Suit suit : Suit.values()){
@@ -179,9 +213,27 @@ public class SeansGry  {
     }
     public String readFromPlayer(Player player){
         String s = player.session.readFromKlient();
-        System.out.println(s);
+        System.out.println(player.getUsername() + ":"+s);
         return s;
     }
 
+    public boolean isCardGreater(Card a, Card b){
+        if (a.getSuit().equals(atut)){
+            if (b.getSuit().equals(atut)){
+                return a.getValue() > b.getValue();
+            }
+            else {
+                return true;
+            }
+        }
+        else if (b.getSuit().equals(atut)){
+            return false;
+        }
+        else if (a.getColor().equals(b.getColor())){
+                return a.getValue() > b.getValue();
+            }
+        return false;
+
+    }
 
 }

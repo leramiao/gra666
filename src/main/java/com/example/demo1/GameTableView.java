@@ -168,8 +168,6 @@ public class GameTableView {
             System.out.println("received command " + command[0]);
             switch (command[0]) {
                 case "ACCEPT_PLAYER":
-                    System.out.println("accepting playr");
-                    System.out.println("accepting " +  command[1]);
                     Platform.runLater(new Runnable() {
                         @Override
                         public void run() {
@@ -191,6 +189,9 @@ public class GameTableView {
                     initGame();
                     break;
                 case "COLLECT_CARDS":
+                    initCards();
+                    break;
+                case "COLLECT_CARD":
                     initCards();
                     break;
                 case "CLEAR":

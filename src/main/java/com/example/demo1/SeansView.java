@@ -43,7 +43,7 @@ public class SeansView {
         this.primaryStage = primaryStage;
         this.playerCards = new ImageView[6];
         this.opponentCards = new ImageView[6];
-        this.tableCards = new ImageView[2];
+        this.tableCards = new ImageView[3];
         this.playerSection = new VBox();
         this.opponentSection = new VBox();
     }
@@ -54,7 +54,7 @@ public class SeansView {
         this.primaryStage = primaryStage;
         this.playerCards = new ImageView[6];
         this.opponentCards = new ImageView[6];
-        this.tableCards = new ImageView[2];
+        this.tableCards = new ImageView[3];
         this.playerSection = new VBox();
         this.opponentSection = new VBox();
     }
@@ -89,15 +89,19 @@ public class SeansView {
         }
 
         // Opponent's cards (replace with actual card images as needed)
-        ImageView[] opponentCards = new ImageView[6];
+        //ImageView[] opponentCards = new ImageView[6];
         for (int i = 0; i < opponentCards.length; i++) {
             opponentCards[i] = new ImageView();
         }
 
         // Player's cards (replace with actual card images as needed)
-        ImageView[] playerCards = new ImageView[6];
+        //ImageView[] playerCards = new ImageView[6];
         for (int i = 0; i < playerCards.length; i++) {
             playerCards[i] = new ImageView();
+        }
+
+        for (int i = 0; i < tableCards.length; i++) {
+            tableCards[i] = new ImageView();
         }
 
         // Labels for opponent and player names
@@ -134,7 +138,7 @@ public class SeansView {
         }
 
         // Layout for player's section
-        playerSection = new VBox(10);
+        //playerSection = new VBox(10);
         playerSection.setAlignment(Pos.CENTER);
         playerSection.setPadding(new Insets(20));
         playerSection.getChildren().addAll(playerName, playerProfileImageView);
@@ -224,14 +228,12 @@ public class SeansView {
             @Override
             protected Void call() throws Exception {
                 while (true) {
-                    System.out.println("Waitnig for command GTV");
+                    //System.out.println("Waitnig for command GTV");
                     try {
                         String[] command = HelloApplication.client.readFromServer().split(" ");
                         System.out.println("received command " + command[0]);
                         switch (command[0]) {
                             case "ACCEPT_PLAYER":
-                                System.out.println("accepting playr");
-                                System.out.println("accepting " + command[1]);
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
@@ -240,7 +242,6 @@ public class SeansView {
                                 });
                                 break;
                             case "FULL":
-                                System.out.println("full");
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
@@ -249,19 +250,34 @@ public class SeansView {
                                 });
                                 break;
                             case "START":
-                                System.out.println("starting");
                                 initGame();
                                 break;
                             case "COLLECT_CARDS":
                                 String[] cards = new String[6];
-                                for (int i = 0; i < 6; i++){
+                                for (int i = 0; i < 6; i++) {
                                     cards[i] = HelloApplication.client.readFromServer();
-                                    System.out.println(cards[i] + " is recorded");
                                 }
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
                                         initCards(cards);
+                                    }
+                                });
+                                break;
+                            case "COLLECT_CARD":
+                                String cardinfo = command[1];
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        takeCard(cardinfo);
+                                    }
+                                });
+                                break;
+                            case "OPP_COLLECT_CARD":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        drawCardForOpponent();
                                     }
                                 });
                                 break;
@@ -297,12 +313,12 @@ public class SeansView {
                                 });
                                 break;
                             case "REQUEST_CARD":
-                                System.out.println("  card  requested");
+
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                       // waitForCardClick();
-                                        waitForCardClickv0();
+                                        // waitForCardClick();
+                                        unlockCards();
                                     }
                                 });
                                 break;
@@ -310,13 +326,15 @@ public class SeansView {
                                 putCard(Integer.parseInt(command[1]), command[2]);
                                 break;
                             case "CARD_ACCEPTED":
+                                lockCards();
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
+                                        //lockCards();
                                         int cardIndex = Integer.parseInt(command[1]);
                                         String cardInfo = command[2];
                                         try {
-                                            putCard(1,cardInfo);
+                                            putCard(1, cardInfo);
                                         } catch (FileNotFoundException e) {
                                             throw new RuntimeException(e);
                                         }
@@ -336,7 +354,7 @@ public class SeansView {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    System.out.println("Processed command GTV");
+                    //System.out.println("Processed command GTV");
                 }
             }
         };
@@ -359,20 +377,12 @@ public class SeansView {
         slot.setImage(null);
 
     }
-    private void waitForCardClickv0() {
-        for (int i = 0; i < 6; i++) {
-            int cardIndex = i;
-            playerCards[cardIndex].setOnMouseClicked(event -> {
-                System.out.println("You clicked the card " + cardIndex);
-                try {
-                    HelloApplication.client.writeToServer("PUT " + cardIndex);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-    }
     private void initCards(String[] cards) {
+        try {
+            this.cardBack = new Image(new FileInputStream("media/cards/MYSTERY.png"));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         VBox roundCards = new VBox();
         HBox tableMyCards = new HBox();
         HBox tableOppCards = new HBox();
@@ -380,7 +390,6 @@ public class SeansView {
         for (int i = 0; i < 6; i++) {
 
 
-            playerCards[i] = new ImageView();
             try {
                 putCard(3 + i, cards[i]);
             } catch (FileNotFoundException e) {
@@ -389,10 +398,13 @@ public class SeansView {
             tableMyCards.getChildren().add(playerCards[i]);
         }
 
+        activateCards();
+        lockCards();
+
         for (int i = 0; i < 6; i++) {
 
             try {
-                opponentCards[i] = new ImageView(new Image(new FileInputStream("media/cards/MYSTERY.png")));
+                putCard(9+i,"media/cards/MYSTERY.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -401,13 +413,21 @@ public class SeansView {
 
         for (int i = 0; i < 2; i++) {
             try {
-                tableCards[i] = new ImageView(new Image(new FileInputStream("media/cards/BLANK.png")));
+                //tableCards[i] = new ImageView(new Image(new FileInputStream("media/cards/BLANK.png")));
+                putCard(i,"media/cards/MYSTERY.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
 
             tableCards[i].setVisible(false);
             roundCards.getChildren().add(tableCards[i]);
+        }
+
+        try {
+            putCard(2, "media/cards/MYSTERY.png");
+            root.setRight(tableCards[2]);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
 
 
@@ -443,17 +463,66 @@ public class SeansView {
         return task;
     }
     public void initGame() {
-        //acceptPlayersThread.interrupt();
-        System.out.println("init game !");
 
-        try {
-            this.cardBack = new Image(new FileInputStream("media/cards/MYSTERY.png"));
-            System.out.println("assign sprite !");
-        } catch (FileNotFoundException e) {
-            System.out.println("no card");
-            throw new RuntimeException(e);
-        }
         System.out.println("remove button !");
         amReady.setVisible(false);
+    }
+    private void takeCard(String cardinfo) {
+        for (int i = 0; i < 6; i++) {
+            if (!playerCards[i].isVisible()) {
+                try {
+                    putCard(i + 3, cardinfo);
+                    return;
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+    private void lockCards(){
+        for (ImageView card : playerCards){
+            card.setDisable(true);
+        }
+    }
+    private void unlockCards(){
+        for (ImageView card : playerCards){
+            card.setDisable(false);
+        }
+    }
+
+    private void activateCards() {
+        for (int i = 0; i < 6; i++) {
+            int cardIndex = i;
+            playerCards[cardIndex].setOnMouseClicked(event -> {
+                System.out.println("You clicked the card " + cardIndex);
+                try {
+                    HelloApplication.client.writeToServer("PUT " + cardIndex);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+    public void drawCardForOpponent(int n) {
+        int ctr = 0;
+        for (int i = 0; i < 6; i++) {
+            if (!opponentCards[i].isVisible()) {
+                opponentCards[i].setVisible(true);
+                opponentCards[i].setImage(cardBack);
+                ctr++;
+            }
+            if (ctr == n) return;
+        }
+    }
+
+    public void drawCardForOpponent() {
+        for (int i = 0; i < 6; i++) {
+            if (!opponentCards[i].isVisible()) {
+                opponentCards[i].setVisible(true);
+                opponentCards[i].setImage(cardBack);
+                return;
+            }
+
+        }
     }
 }

@@ -117,7 +117,7 @@ public class UserSession implements Runnable{
     }
 
     public void writeToKlient(String line) throws IOException {
-        System.out.println(">"+line);
+        System.out.println(line+"->"+username);
         out.write(line+"\n");
         out.flush();
     }
