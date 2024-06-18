@@ -1,26 +1,12 @@
 package com.example.demo1;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.TableView;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import logic.Client;
-import logic.Table;
 
-import java.io.File;
-
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-public class HelloApplication extends Application {
+public class Application extends javafx.application.Application {
     public static Client client;
 
     @Override
@@ -33,15 +19,6 @@ public class HelloApplication extends Application {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
-
-        /*
-
-
-        Parent root = FXMLLoader.load(getClass().getResource("entrance-view.fxml"));
-        Scene scene = new Scene(root);
-        stage.setScene(scene);
-        stage.show();
-         */
 
         SceneController controller = new SceneController(stage);
         MainMenuView firstView = new MainMenuView();

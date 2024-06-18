@@ -1,5 +1,4 @@
 package com.example.demo1;
-// LoginView.java
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,12 +11,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-
-//Klasa odpowiedzialna za panel logowania
-//Umozliwia odpalenia formularza rejestracji
 public class LoginView  {
-
-
 
     public void display() {
         Stage stage = new Stage();
@@ -42,8 +36,8 @@ public class LoginView  {
             String username = usernameTextField.getText();
             String password = passwordField.getText();
             try {
-                HelloApplication.client.writeToServer("LOGIN " + username + " " + password);
-                if (HelloApplication.client.readFromServer().equals("SUCCESS")) {
+                Application.client.writeToServer("LOGIN " + username + " " + password);
+                if (Application.client.readFromServer().equals("SUCCESS")) {
                     stage.close();
                     SceneController.activeUsername = username;
                     SceneController.openLoungeView();

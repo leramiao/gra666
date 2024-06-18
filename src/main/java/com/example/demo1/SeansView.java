@@ -14,14 +14,11 @@ import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import logic.Player;
-import logic.Theme;
 import logic.UserSession;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.FutureTask;
 
 public class SeansView implements BasicForm{
     private static final String ICON_FILENAME = "client/pfps/default.jpg";
@@ -42,27 +39,15 @@ public class SeansView implements BasicForm{
     private StackPane stackSlot;
     private Stage primaryStage;
     private Image cardBack;
-    private Theme theme;
     private Label pointsLabel;
-    int tableID;
-    private
-    boolean listen;
+    private int tableID;
+    private boolean listen;
     private VBox sideCards;
     private Button meldunekButton;
     private Button leaveButton;
     private Button declare66Button;
 
     public SeansView(Stage primaryStage, int table) {
-        this.theme = Theme.SPACE;
-        this.tableID = table;
-        this.primaryStage = primaryStage;
-        this.playerCards = new ImageView[6];
-        this.opponentCards = new ImageView[6];
-        this.tableCards = new ImageView[3];
-    }
-
-    public SeansView(Stage primaryStage, int table, Theme theme) {
-        this.theme = theme;
         this.tableID = table;
         this.primaryStage = primaryStage;
         this.playerCards = new ImageView[6];
@@ -76,7 +61,7 @@ public class SeansView implements BasicForm{
         VBox buttons = new VBox();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream(String.format(BG_DIR+"%s.png", theme.name()))), BackgroundRepeat.REPEAT,null,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream(String.format(BG_DIR+"%s.png", "HEAVEN"))), BackgroundRepeat.REPEAT,null,null,null);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -84,7 +69,7 @@ public class SeansView implements BasicForm{
         amReady = new Button("Ready!");
         amReady.setOnAction(e -> {
             try {
-                HelloApplication.client.writeToServer("READY " + tableID);
+                Application.client.writeToServer("READY " + tableID);
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
@@ -97,7 +82,7 @@ public class SeansView implements BasicForm{
                 @Override
                 public void run() {
                     try {
-                        HelloApplication.client.writeToServer("LEAVE " + tableID + " " + SceneController.activeUsername);
+                        Application.client.writeToServer("LEAVE " + tableID + " " + SceneController.activeUsername);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -127,8 +112,6 @@ public class SeansView implements BasicForm{
             tableCards[i] = new ImageView();
         }
 
-        // Labels for opponent and player names
-
         playerName = new Label();
         playerName.setFont(Font.font("Arial", FontWeight.BOLD, 18));
 
@@ -138,8 +121,6 @@ public class SeansView implements BasicForm{
         opponentSection.setVisible(false);
 
 
-
-        // Profile picture ImageViews
         ImageView opponentProfileImageView = new ImageView(iconImage);
         opponentProfileImageView.setFitWidth(100);
         opponentProfileImageView.setFitHeight(100);
@@ -148,7 +129,6 @@ public class SeansView implements BasicForm{
         playerProfileImageView.setFitWidth(100);
         playerProfileImageView.setFitHeight(100);
 
-        // Layout for opponent's section
         opponentSection.setAlignment(Pos.CENTER);
         opponentSection.setPadding(new Insets(20));
         opponentSection.getChildren().addAll(opponentName, opponentProfileImageView);
@@ -160,8 +140,6 @@ public class SeansView implements BasicForm{
             opponentCardsBox.getChildren().add(card);
         }
 
-        // Layout for player's section
-        //playerSection = new VBox(10);
         playerSection.setAlignment(Pos.CENTER);
         playerSection.setPadding(new Insets(20));
         playerSection.getChildren().addAll(playerName, playerProfileImageView);
@@ -181,8 +159,6 @@ public class SeansView implements BasicForm{
         pointsLabel.setVisible(false);
 
 
-
-        // Main layout
         root = new BorderPane();
         root.setPadding(new Insets(10));
         root.setTop(opponentSection);
@@ -193,7 +169,6 @@ public class SeansView implements BasicForm{
         playerSection.getChildren().add(actionButtons);
         root.backgroundProperty().set(new Background(bg));
 
-        // Create scene and set on stage
         Scene scene = new Scene(root, 720, 730);
         primaryStage.setScene(scene);
         primaryStage.setTitle("gra 666");
@@ -237,13 +212,6 @@ public class SeansView implements BasicForm{
 
         amReady.setDisable(false);
     }
-    public void moveCard(int posA, int posB){
-        ImageView slotA = getSlotByPosition(posA);
-        Image sprite = slotA.getImage();
-        slotA.setVisible(false);
-        slotA.setImage(null); //rethink later
-        getSlotByPosition(posB).setImage(sprite);
-    }
 
     public ImageView getSlotByPosition(int pos) {
         return switch (pos) {
@@ -259,9 +227,8 @@ public class SeansView implements BasicForm{
             @Override
             protected Void call() throws Exception {
                 while (listen) {
-                    //System.out.println("Waitnig for command GTV");
                     try {
-                        String[] command = HelloApplication.client.readFromServer().split(" ");
+                        String[] command = Application.client.readFromServer().split(" ");
                         System.out.println("received command " + command[0]);
                         switch (command[0]) {
                             case "ACCEPT_PLAYER":
@@ -339,6 +306,9 @@ public class SeansView implements BasicForm{
                                     @Override
                                     public void run() {
                                         setPoints(Integer.parseInt(command[1]));
+                                        meldunekButton.setVisible(true);
+                                        declare66Button.setVisible(true);
+                                        closeStackButton.setVisible(true);
                                     }
                                 });
                                 break;
@@ -379,7 +349,7 @@ public class SeansView implements BasicForm{
                             case "COLLECT_CARDS":
                                 String[] cards = new String[6];
                                 for (int i = 0; i < 6; i++) {
-                                    cards[i] = HelloApplication.client.readFromServer();
+                                    cards[i] = Application.client.readFromServer();
                                 }
                                 Platform.runLater(new Runnable() {
                                     @Override
@@ -474,13 +444,23 @@ public class SeansView implements BasicForm{
                                     }
                                 });
                                 break;
+                            case "MELDUNEK_TRY":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        meldunekButton.setDisable(true);
+
+                                    }
+                                });
+                                break;
                             case "CARD_ACCEPTED":
                                 lockCards();
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        //lockCards();
                                         closeStackButton.setDisable(true);
+                                        meldunekButton.setDisable(true);
+                                        declare66Button.setDisable(true);
                                         int cardIndex = Integer.parseInt(command[1]);
                                         String cardInfo = command[2];
                                         try {
@@ -495,14 +475,13 @@ public class SeansView implements BasicForm{
                                 break;
 
                             default:
-                                System.out.println("UNKNOWN COMMANd! gametableview");
+                                System.out.println("UNKNOWN COMMAND!");
                                 break;
                         }
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    //System.out.println("Processed command GTV");
                 }
                 return null;
             }
@@ -517,15 +496,13 @@ public class SeansView implements BasicForm{
 
     private void closeStack() {
         try {
-            HelloApplication.client.writeToServer("CLOSE_STACK");
+            Application.client.writeToServer("CLOSE_STACK");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void drawClosedStack() {
-        //tableCards[2].setVisible(false);
-        //Image atutowa = tableCards[2].getImage();
 
         tableCards[2].setRotate(tableCards[2].getRotate() + 90);
         stackSlot.getChildren().add(tableCards[2]);
@@ -544,9 +521,6 @@ public class SeansView implements BasicForm{
             }
         }
     }
-    /*
-    Empty the slot
-     */
     public void removeCard(int pos){
         ImageView slot = getSlotByPosition(pos);
         slot.setVisible(false);
@@ -629,6 +603,7 @@ public class SeansView implements BasicForm{
 
         closeStackButton.setDisable(true);
         meldunekButton.setDisable(true);
+        declare66Button.setDisable(true);
     }
 
     private void takeCard(String cardinfo) {
@@ -660,7 +635,7 @@ public class SeansView implements BasicForm{
             playerCards[cardIndex].setOnMouseClicked(event -> {
                 System.out.println("You clicked the card " + cardIndex);
                 try {
-                    HelloApplication.client.writeToServer("PUT " + cardIndex);
+                    Application.client.writeToServer("PUT " + cardIndex);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -689,7 +664,7 @@ public class SeansView implements BasicForm{
 
     private void declare66() {
         try {
-            HelloApplication.client.writeToServer("DECLARE66");
+            Application.client.writeToServer("DECLARE66");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -697,7 +672,7 @@ public class SeansView implements BasicForm{
 
     private void meldunek() {
         try {
-            HelloApplication.client.writeToServer("MELDUNEK");
+            Application.client.writeToServer("MELDUNEK");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

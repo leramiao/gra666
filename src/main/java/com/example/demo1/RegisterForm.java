@@ -2,8 +2,6 @@ package com.example.demo1;
 
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,35 +9,19 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import logic.User;
-import logic.UserManager;
 
 public class RegisterForm implements BasicForm {
-    // Pola na dane użytkownika
-    private SceneController controller;
 
     private TextField usernameField;
     private PasswordField passwordField;
-    private TextField firstNameField;
-    private TextField lastNameField;
 
     public RegisterForm() {
 
-
-
-
-        // Inicjalizacja pól
         usernameField = new TextField();
         usernameField.setPromptText("Login");
 
         passwordField = new PasswordField();
         passwordField.setPromptText("Haslo");
-
-        firstNameField = new TextField();
-        firstNameField.setPromptText("Imie");
-
-        lastNameField = new TextField();
-        lastNameField.setPromptText("Nazwisko");
     }
 
     @Override
@@ -54,7 +36,6 @@ public class RegisterForm implements BasicForm {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        // Dodanie pól do gridu
         grid.add(usernameField, 0, 0);
         grid.add(passwordField, 0, 1);
 
@@ -79,28 +60,16 @@ public class RegisterForm implements BasicForm {
     }
 
 
-    // Funkcja obsługująca proces rejestracji
     private void registerUser() {
         try {
             String username = usernameField.getText();
             String password = passwordField.getText();
 
 
-
-            // Walidacja danych wejściowych
             if (username.isEmpty() || password.isEmpty()) {
-                throw new IllegalArgumentException("Wszystkie niezbedne pola muszą być wypełnione");
+                throw new IllegalArgumentException("Wszystkie pola muszą być wypełnione");
             }
-            // Sprawdzenie, czy login jest dostępny
-            if (!isUsernameAvailable(username)) {
-                showAlert("Błąd rejestracji", "Login '" + username + "' jest już zajęty.");
-                return;
-            }
-            //Koncowy etap - zapisujemy dane
-            User user = new User(username, password);
-            saveUserData(user);
-            UserManager.addUser(user);
-            showAlert("Rejestracja zakończona", "Konto zostało pomyślnie utworzone.");
+            saveUserData(username, password);
 
         } catch (IllegalArgumentException ex) {
             showAlert("Błąd rejestracji", ex.getMessage());
@@ -109,32 +78,15 @@ public class RegisterForm implements BasicForm {
         }
     }
 
-    //Zapisywanie do pliku
-    private void saveUserData(User user) throws IOException {
-        HelloApplication.client.writeToServer("ADD_USER " + user.getLogin() + " " + user.getPassword());
-        String reply = HelloApplication.client.readFromServer();
+    private void saveUserData(String username, String password) throws IOException {
+        Application.client.writeToServer("ADD_USER " + username + " " + password);
+        String reply = Application.client.readFromServer();
         if (!reply.equals("SUCCESS")){
             showAlert("Błąd rejestracji", reply);
         }
-    }
-
-    private boolean isUsernameAvailable(String username) {
-        File file = new File("credentials.txt");
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(":");
-                    if (parts.length > 1 && parts[1].equals(username)) {
-                        return false; // Login już istnieje
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        else {
+            showAlert("Rejestracja zakończona", "Konto zostało pomyślnie utworzone.");
         }
-        return true; // Login jest dostępny
     }
-
 
 }

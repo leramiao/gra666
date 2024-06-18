@@ -7,22 +7,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 public class MainMenuView {
-    private SceneController controller;
-
-
-    public MainMenuView() {
-
-    }
 
     public void display()   {
         Stage stage = new Stage();
@@ -31,7 +22,7 @@ public class MainMenuView {
         GridPane grid = new GridPane();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream("client/bg/field2.png")), BackgroundRepeat.NO_REPEAT,null,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream("client/bg/field2.png")), BackgroundRepeat.NO_REPEAT,null, BackgroundPosition.CENTER,null);
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

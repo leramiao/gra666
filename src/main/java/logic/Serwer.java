@@ -5,7 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 public class Serwer {
     private static final String DATABASE_NAME = "cardgame";
@@ -17,7 +16,6 @@ public class Serwer {
     private ServerSocket serverSocket;
 
     private int sessionID = 0;
-    private ExecutorService service;
     private static Connection connection;
     private static Statement statement;
     private static SeansManager seansManager = new SeansManager();
@@ -38,21 +36,16 @@ public class Serwer {
 
     public void start(int port) throws IOException {
         prepDatabase();
-        //seansManager = new SeansManager();
-        //seansManager.createSeans(new Table(2));
         serverSocket = new ServerSocket(port);
-        //service = new ThreadPoolExecutor(5,100,0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
         while (true){
             socket = serverSocket.accept();
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            //in = new Scanner(socket.getInputStream());
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
 
             if (readFromKlient().equals("CONNECT")){
                 writeToKlient("CONNECTED");
                 System.out.println("connection established");
-                //service.submit(new UserSession(sessionID, socket, in, out, statement));
                 new Thread(new UserSession(sessionID, socket, in, out, statement)).start();
                 sessionID++;
 
@@ -67,7 +60,6 @@ public class Serwer {
     }
 
     public String readFromKlient() throws IOException {
-        System.out.println("Waiting for client response.. ");
         String line = in.readLine();
         System.out.println(line);
         return line;
@@ -96,7 +88,6 @@ public class Serwer {
     }
 
     public static int addPlayerToWaiting(int tableID){
-        System.out.println("SERVER ADD PLAYER TO WAITING");
         for (SeansGry seansGry : seansManager.getSeanse()){
             if (seansGry.getTableID() == tableID){
                 Table table = seansGry.getTable();
@@ -170,6 +161,7 @@ public class Serwer {
         } else {
             System.out.println("brak takiej bazy, tworze");
             executeUpdate(statement,"CREATE database " + DATABASE_NAME + ";");
+            createUser("miao","miao");
             executeUpdate(statement, "USE " + DATABASE_NAME);
         }
         initDatabase(statement);
@@ -239,6 +231,11 @@ public class Serwer {
 
         }
         return res;
+    }
+
+    public static int createUser(String user, String password){
+        executeUpdate(statement,String.format("CREATE LOGIN %s WITH PASSWORD = '%s';",user, password));
+        return executeUpdate(statement,String.format("ALTER ROLE db_owner ADD MEMBER %s;",user));
     }
 
 }

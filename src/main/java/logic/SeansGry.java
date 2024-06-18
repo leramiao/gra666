@@ -12,26 +12,17 @@ import static java.util.Collections.swap;
 
 public class SeansGry implements Runnable{
     public Player[] players;
-
     private Stack<Card> cardStack;
     private Table table;
     private Card[] cardsOnTable;
     private Suit atut;
     private int lewa;
-    private int[] bonusPoints = {0,0};
     private boolean declaration;
 
     public SeansGry(Table table) {
         this.cardStack = new Stack<>();
         this.cardsOnTable = new Card[3];
         this.table = table;
-        this.players = new Player[2];
-    }
-
-    public SeansGry(int maxPlayers, String username) {
-        this.cardStack = new Stack<>();
-        this.cardsOnTable = new Card[3];
-        this.table = new Table(maxPlayers, username);
         this.players = new Player[2];
     }
 
@@ -100,12 +91,6 @@ public class SeansGry implements Runnable{
         for (Player player : table.getPlayers()){
             writeToPlayer(player, "FULL");
         }
-
-    }
-
-    public void endGame(boolean firstWon){
-        writeToPlayer(players[0], "VICTORY");
-        writeToPlayer(players[1], "LOSS");
     }
 
     public int getTableID(){
@@ -231,6 +216,8 @@ public class SeansGry implements Runnable{
         }
         if (line[0].equals("MELDUNEK")){
             line = readFromPlayer(attacker).split(" ");
+            writeToPlayer(attacker, "MELDUNEK_TRY");
+            line = readFromPlayer(attacker).split(" ");
 
             while (!line[0].equals("PUT")) {
                 System.out.println("put a card pleasseee");
@@ -258,7 +245,6 @@ public class SeansGry implements Runnable{
             }
         }
         if (line[0].equals("DECLARE66")){
-            assignGlobalPoints();
             declaration = true;
             return true;
         }
@@ -352,12 +338,10 @@ public class SeansGry implements Runnable{
     }
 
     public void roundLoop(){
-        while (true){
-            if (isOver()){
-                break;
-            }
+        while (!isOver()) {
             round();
         }
+        assignGlobalPoints();
     }
     public void generateCards(){
         cardStack.clear();
@@ -427,7 +411,11 @@ public class SeansGry implements Runnable{
 
     @Override
     public void run() {
+        players[1].session.setListen(false);
+        players[0].session.setListen(false);
         gameLoop();
+        players[0].session.setListen(true);
+        players[1].session.setListen(true);
         Serwer.deleteTable(table.getId());
     }
 }

@@ -44,9 +44,6 @@ public class Player {
         this.globalPoints += pts;
     }
 
-    public void setGlobalPoints(int globalPoints) {
-        this.globalPoints = globalPoints;
-    }
 
     public void loseCard(int i){
         cards[i] = null;
@@ -67,6 +64,7 @@ public class Player {
     }
     public void resetRoundData(){
         points = 0;
+        nCards = 0;
         bonus = 0;
         for (int i = 0; i < 6; i++){
             cards[i] = null;

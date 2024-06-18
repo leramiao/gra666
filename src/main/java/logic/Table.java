@@ -46,14 +46,6 @@ public class Table {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public void setPlayersAmount(int playersAmount) {
-        this.playersAmount = playersAmount;
-    }
-
     public int getMaxPlayers() {
         return maxPlayers;
     }
@@ -80,18 +72,9 @@ public class Table {
         return playersAmount < maxPlayers;
     }
 
-    public void setMaxPlayers(int maxPlayers) {
-        this.maxPlayers = maxPlayers;
-    }
 
     public void incWaiting(){
         nWaiting++;
-    }
-    public void incPlayerAmount(){
-        playersAmount++;
-    }
-    public void decPlayerAmount(){
-        playersAmount--;
     }
     public void decWaiting(){
         nWaiting--;
@@ -101,21 +84,12 @@ public class Table {
         return nWaiting;
     }
 
-    public void addPlayerNoIncrement(String username, UserSession session){
-        this.players.add(new Player(username,session));
-
-    }
-
     public boolean isFilled() {
         return maxPlayers == playersAmount;
     }
 
     public String getOwner() {
         return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
     }
 
     public String getFilledRatio() {

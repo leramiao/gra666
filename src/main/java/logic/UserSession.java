@@ -18,6 +18,7 @@ public class UserSession extends Thread{
     private BufferedReader in;
     private PrintWriter out;
     String username;
+    private boolean listen;
 
     private Socket socket;
 
@@ -32,13 +33,14 @@ public class UserSession extends Thread{
         this.in = in;
         this.out = out;
         this.socket = socket;
+        listen = true;
     }
 
 
     @Override
     public void run() {
         String[] client_input;
-        while (true){
+        while (listen){
             client_input = readFromKlient().split(" ");
             switch(client_input[0]){
                 case "ADD_USER":
@@ -82,9 +84,6 @@ public class UserSession extends Thread{
                 case "DELETE_TABLE":
                     deleteTable(Integer.parseInt(client_input[1]));
                     break;
-                case "PUT":
-                    int cardID = Integer.parseInt(client_input[1]);
-                    break;
                 case "ACCEPT_CARD":
                     break;
                 case "READY":
@@ -97,33 +96,23 @@ public class UserSession extends Thread{
                 case "CANCEL_READY":
                     break;
                 default:
-                    System.out.println("UNKNOWN COMMANd!");
+                    System.out.println("UNKNOWN COMMAND! session");
                     break;
             }
         }
     }
 
-    private void getPFP(String username) throws IOException {
-        OutputStream out = socket.getOutputStream();
-        File file = new File("media/pfps/"+username+".png");
-        if (!file.exists()){
-            file = new File("media/pfps/default.png");
-        }
-        BufferedImage image = ImageIO.read(file);
-        ImageIO.write(image,"PNG",out);
-        out.flush();
-        out.close();
-    }
+
 
     public String readFromKlient() {
 
         String line = null;
         try {
+            while (!in.ready());
             line = in.readLine();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println(line + " in session");
 
         return line;
     }
@@ -157,7 +146,6 @@ public class UserSession extends Thread{
             sessions.put(username, this);
             writeToKlient("SUCCESS");
             this.username = username;
-            //SceneController.openLoungeView();
             return;
         }
         writeToKlient("FAILURE");
@@ -178,8 +166,6 @@ public class UserSession extends Thread{
     public void joinTable(String username, int tableID) throws IOException {
         System.out.println(username + " is joining table " + tableID);
         Serwer.joinTable(username,tableID);
-        //writeToKlient("OK");
-        //sendTableInfo(tableID);
 
     }
     public void listTables() throws IOException {
@@ -190,31 +176,9 @@ public class UserSession extends Thread{
             writeToKlient(seans.getTableID() + " " + seans.getTable().getMaxPlayers() + " " + seans.getTable().getPlayersAmount()+ " " + seans.getTable().getOwner() );
 
         }
-
     }
 
-    /*
-    public void sendTableInfo(int tableID) throws IOException {
-        List<Table> tableList = Serwer.getTables();
-        //writeToKlient(String.valueOf(tableList.size()));
-        for (Table table : tableList){
-            if (table.getId() == tableID){
-                //writeToKlient(table.getId() + " " + table.getMaxPlayers() + " " + table.getPlayersAmount());
-                System.out.println("N players:");
-                writeToKlient(String.valueOf(table.getPlayersAmount()));
-                System.out.println("Listing players already at the table");
-                for (Player player : table.getPlayers()){
-                    writeToKlient(player.getUsername());
-                }
-
-            }
-        }
-
-    }
-
-     */
-
-    public Socket getSocket() {
-        return socket;
+    public void setListen(boolean listen) {
+        this.listen = listen;
     }
 }
