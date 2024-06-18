@@ -26,6 +26,15 @@ public class Serwer {
         return seansManager.getSeanse();
     }
 
+    public static void leaveTable(int tableID, String username) {
+        for (SeansGry seans : seansManager.getSeanse()){
+            if (seans.getTableID() == tableID){
+                seans.leaveTable(username);
+                return;
+            }
+        }
+    }
+
 
     public void start(int port) throws IOException {
         prepDatabase();

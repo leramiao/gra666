@@ -45,8 +45,11 @@ public class SeansView implements BasicForm{
     private Theme theme;
     private Label pointsLabel;
     int tableID;
+    private
+    boolean listen;
     private VBox sideCards;
     private Button meldunekButton;
+    private Button leaveButton;
 
     public SeansView(Stage primaryStage, int table) {
         this.theme = Theme.SPACE;
@@ -66,6 +69,7 @@ public class SeansView implements BasicForm{
         this.tableCards = new ImageView[3];
     }
     private void initialize() {
+        listen = true;
         this.playerSection = new VBox();
         this.opponentSection = new VBox();
         VBox buttons = new VBox();
@@ -85,6 +89,21 @@ public class SeansView implements BasicForm{
             }
         });
         amReady.setDisable(true);
+
+        leaveButton = new Button("Leave");
+        leaveButton.setOnAction(e -> {
+            Platform.runLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        HelloApplication.client.writeToServer("LEAVE " + tableID + " " + SceneController.activeUsername);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                }
+            });
+        });
 
 
 
@@ -153,7 +172,7 @@ public class SeansView implements BasicForm{
             playerCardsBox.getChildren().add(card);
         }
 
-        buttons.getChildren().addAll(amReady);
+        buttons.getChildren().addAll(amReady, leaveButton);
         buttons.setAlignment(Pos.CENTER);
 
 
@@ -234,12 +253,10 @@ public class SeansView implements BasicForm{
     }
 
     public void gameLoop() {
-        System.out.println("in game loop");
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                boolean exit = false;
-                while (!exit) {
+                while (listen) {
                     //System.out.println("Waitnig for command GTV");
                     try {
                         String[] command = HelloApplication.client.readFromServer().split(" ");
@@ -250,6 +267,26 @@ public class SeansView implements BasicForm{
                                     @Override
                                     public void run() {
                                         acceptPlayer(command[1]);
+                                    }
+                                });
+                                break;
+                            case "PLAYER_LEAVE":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        amReady.setDisable(true);
+                                        clearOpponent();
+                                    }
+                                });
+                                break;
+                            case "LEAVE_CONFIRM":
+                                listen = false;
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+                                        primaryStage.close();
+                                        SceneController.openLoungeView();
                                     }
                                 });
                                 break;
@@ -304,7 +341,7 @@ public class SeansView implements BasicForm{
                                 });
                                 break;
                             case "VICTORY":
-                                exit = true;
+                                listen = false;
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
@@ -315,7 +352,7 @@ public class SeansView implements BasicForm{
                                 });
                                 break;
                             case "LOSS":
-                                exit = true;
+                                listen = false;
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
@@ -413,9 +450,6 @@ public class SeansView implements BasicForm{
                                     }
                                 });
                                 break;
-                            case "PUT_CARD":
-                                putCard(Integer.parseInt(command[1]), command[2]);
-                                break;
                             case "MELDUNEK":
                                 Platform.runLater(new Runnable() {
                                     @Override
@@ -461,8 +495,6 @@ public class SeansView implements BasicForm{
                                 break;
                         }
 
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -472,6 +504,11 @@ public class SeansView implements BasicForm{
             }
         };
         new Thread(task).start();
+    }
+
+    private void clearOpponent() {
+        opponentSection.setVisible(false);
+        opponentName.setText(null);
     }
 
     private void closeStack() {

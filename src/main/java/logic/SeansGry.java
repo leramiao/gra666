@@ -44,7 +44,16 @@ public class SeansGry implements Runnable{
 
 
 
-
+    public void leaveTable(String username){
+        for (Player player : table.getPlayers()){
+            if (player.getUsername().equals(username)){
+                writeToPlayer(player,"LEAVE_CONFIRM");
+            } else {
+                writeToPlayer(player, "PLAYER_LEAVE");
+            }
+        }
+        table.playerLeave(username);
+    }
 
     private void putAtut(){
         for (Player p : players){

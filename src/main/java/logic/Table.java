@@ -71,6 +71,7 @@ public class Table {
             if (p.getUsername().equals(username)){
                 playersAmount--;
                 players.remove(p);
+                return;
             }
         }
     }

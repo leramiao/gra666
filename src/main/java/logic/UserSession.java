@@ -80,7 +80,8 @@ public class UserSession extends Thread{
                         throw new RuntimeException(e);
                     }
                     break;
-                case "LEAVE_TABLE":
+                case "LEAVE":
+                    leaveTable(Integer.parseInt(client_input[1]),client_input[2]);
                     break;
                 case "DELETE_TABLE":
                     deleteTable(Integer.parseInt(client_input[1]));
@@ -139,6 +140,9 @@ public class UserSession extends Thread{
 
     public void deleteTable(int tableID){
         Serwer.deleteTable(tableID);
+    }
+    public void leaveTable(int tableID, String username){
+        Serwer.leaveTable(tableID, username);
     }
 
 
