@@ -31,7 +31,7 @@ public class MainMenuView {
         GridPane grid = new GridPane();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream("media/bg/field.jpg")), BackgroundRepeat.NO_REPEAT,null,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream("client/bg/field2.png")), BackgroundRepeat.NO_REPEAT,null,null,null);
 
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

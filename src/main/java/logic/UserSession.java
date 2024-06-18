@@ -19,9 +19,7 @@ public class UserSession extends Thread{
     private PrintWriter out;
     String username;
 
-    private int correctAnswersGiven;
     private Socket socket;
-    private Statement statement;
 
     public static HashMap<String, UserSession> sessions;
 
@@ -33,9 +31,7 @@ public class UserSession extends Thread{
         this.sessionID = sessionID;
         this.in = in;
         this.out = out;
-        this.correctAnswersGiven = 0;
         this.socket = socket;
-        this.statement = statement;
     }
 
 

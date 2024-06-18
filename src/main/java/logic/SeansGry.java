@@ -294,6 +294,7 @@ public class SeansGry implements Runnable{
                 players[1].addGlobalPoints(3);
             }
             writeToPlayer(players[1], "SET_POINTS " + players[1].getGlobalPoints());
+            swapPlayerRoles();
         }
     }
     private boolean finishGame() {

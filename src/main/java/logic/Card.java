@@ -32,6 +32,6 @@ public class Card {
     }
 
     public String getSpriteFilename(){
-        return "media/cards/"+suit.name()+value+".png";
+        return suit.name()+value+".png";
     }
 }

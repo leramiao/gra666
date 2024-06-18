@@ -24,9 +24,9 @@ import java.io.IOException;
 import java.util.concurrent.FutureTask;
 
 public class SeansView implements BasicForm{
-    private static final String ICON_FILENAME = "media/pfps/default.jpg";
-    private static final String CARD_SPRITES_DIR = "media/cards/";
-    private static final String BG_DIR = "media/bg/";
+    private static final String ICON_FILENAME = "client/pfps/default.jpg";
+    private static final String CARD_SPRITES_DIR = "client/cards/borrowed/";
+    private static final String BG_DIR = "client/bg/";
     private Button amReady;
     private Label opponentName;
     private Label playerName;
@@ -50,6 +50,7 @@ public class SeansView implements BasicForm{
     private VBox sideCards;
     private Button meldunekButton;
     private Button leaveButton;
+    private Button declare66Button;
 
     public SeansView(Stage primaryStage, int table) {
         this.theme = Theme.SPACE;
@@ -213,7 +214,8 @@ public class SeansView implements BasicForm{
         String myUsername = SceneController.activeUsername;
         playerName.setText(myUsername);
     }
-    public void putCard(int pos, String filename) throws FileNotFoundException {
+    public void putCard(int pos, String sprite) throws FileNotFoundException {
+        String filename = CARD_SPRITES_DIR+sprite;
         switch (pos){
             case 0, 1, 2:
                 tableCards[pos].setVisible(true);
@@ -442,9 +444,11 @@ public class SeansView implements BasicForm{
                                         if (command[1].equals("ATTACK")){
                                             closeStackButton.setDisable(false);
                                             meldunekButton.setDisable(false);
+                                            declare66Button.setDisable(false);
                                         } else {
                                             closeStackButton.setDisable(true);
                                             meldunekButton.setDisable(true);
+                                            declare66Button.setDisable(true);
                                         }
                                         unlockCards();
                                     }
@@ -551,7 +555,7 @@ public class SeansView implements BasicForm{
     }
     private void initCards(String[] cards) {
         try {
-            this.cardBack = new Image(new FileInputStream(CARD_SPRITES_DIR+"MYSTERY.png"));
+            this.cardBack = new Image(new FileInputStream(CARD_SPRITES_DIR+"BACK.png"));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -582,7 +586,7 @@ public class SeansView implements BasicForm{
         for (int i = 0; i < 6; i++) {
 
             try {
-                putCard(9+i,CARD_SPRITES_DIR+"MYSTERY.png");
+                putCard(9+i,"BACK.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -591,7 +595,7 @@ public class SeansView implements BasicForm{
 
         for (int i = 0; i < 2; i++) {
             try {
-                putCard(i,CARD_SPRITES_DIR+"MYSTERY.png");
+                putCard(i,"BACK.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -601,7 +605,7 @@ public class SeansView implements BasicForm{
         }
 
         try {
-            putCard(2, CARD_SPRITES_DIR+"MYSTERY.png");
+            putCard(2, "BACK.png");
             root.setRight(sideCards);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -674,7 +678,7 @@ public class SeansView implements BasicForm{
         closeStackButton.setOnAction(event -> {
             closeStack();
         });
-        Button declare66Button = new Button("66");
+        declare66Button = new Button("66");
         declare66Button.setOnAction(event -> {
             declare66();
         });
