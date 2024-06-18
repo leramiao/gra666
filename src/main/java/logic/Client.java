@@ -7,7 +7,7 @@ import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Client {
-    private Socket socket;
+    public Socket socket;
     private BufferedReader in;
     private PrintWriter out;
 

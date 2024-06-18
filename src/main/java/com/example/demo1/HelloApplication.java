@@ -44,7 +44,7 @@ public class HelloApplication extends Application {
          */
 
         SceneController controller = new SceneController(stage);
-        LoginView firstView = new LoginView();
+        MainMenuView firstView = new MainMenuView();
         //LoungeView firstView = new LoungeView();
         firstView.display();
     }

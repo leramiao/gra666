@@ -37,17 +37,20 @@ public class LoungeView implements  BasicForm {
     private Stage stage;
 
 
+    private void readTables() throws IOException {
+        HelloApplication.client.writeToServer("LIST_TABLES");
+        int nTables = Integer.parseInt(HelloApplication.client.readFromServer());
+        String[] tableInfo;
+        SceneController.clearTables();
+        for (int i = 0 ; i < nTables; i++){
+            tableInfo = HelloApplication.client.readFromServer().split(" ");
+            SceneController.seansManager.addSeans(new SeansGry(Integer.parseInt(tableInfo[0]),Integer.parseInt(tableInfo[1]),Integer.parseInt(tableInfo[2]),tableInfo[3]));
+        }
+    }
     public LoungeView() {
         try {
 
-            HelloApplication.client.writeToServer("LIST_TABLES");
-            int nTables = Integer.parseInt(HelloApplication.client.readFromServer());
-            String[] tableInfo;
-            SceneController.clearTables();
-            for (int i = 0 ; i < nTables; i++){
-                tableInfo = HelloApplication.client.readFromServer().split(" ");
-                SceneController.seansManager.addSeans(new SeansGry(Integer.parseInt(tableInfo[0]),Integer.parseInt(tableInfo[1]),Integer.parseInt(tableInfo[2]),SceneController.activeUsername));
-            }
+            readTables();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -69,7 +72,7 @@ public class LoungeView implements  BasicForm {
                     SceneController.openTableView(table.getTable());
                 }
                 else {
-                    showAlert("CANT JOIN", "SORRY");
+                    showAlert("CANT JOIN", "TABLE FULL");
                 }
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -79,12 +82,19 @@ public class LoungeView implements  BasicForm {
 
         Button createTableButton = new Button("Create table");
         createTableButton.setOnAction( e -> {
-            SceneController.openCreateTableView();
+
+            try {
+                HelloApplication.client.writeToServer("CREATE_TABLE");
+                refreshTable();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         });
 
         Button deleteTableButton = new Button("Delete table");
         deleteTableButton.setOnAction( e -> {
             SeansGry table = tablesList.getSelectionModel().getSelectedItem();
+            if (table == null) return;
             if (table.getTable().getOwner().equals(SceneController.activeUsername)){
                 try {
                     HelloApplication.client.writeToServer("DELETE_TABLE " + table.getTableID());
@@ -128,31 +138,23 @@ public class LoungeView implements  BasicForm {
 
         Scene scene = null;
         stage = new Stage();
-        try {
-            BorderPane root = new BorderPane();
-            BackgroundImage bg = new BackgroundImage(new Image(new FileInputStream("media/bg/SPACE.png")), BackgroundRepeat.REPEAT,BackgroundRepeat.SPACE,null,null);
-            root.backgroundProperty().set(new Background(bg));
+        BorderPane root = new BorderPane();
 
-            tablesList = createTableView();
-            root.setCenter(tablesList);
-            root.setBottom(buttonBox);
+        tablesList = createTableView();
+        root.setCenter(tablesList);
+        root.setBottom(buttonBox);
 
 
-            scene = new Scene(root, 600, 500);
-            stage.setTitle("Lounge");
-            stage.setScene(scene);
-
-        } catch (IOException e) {
-            System.out.println("oooooops");
-            throw new RuntimeException(e);
-        }
+        scene = new Scene(root, 600, 500);
+        stage.setTitle("Lounge");
+        stage.setScene(scene);
 
         stage.show();
     }
     private TableView<SeansGry> createTableView() {
         tableIDs.setCellValueFactory( t -> new SimpleIntegerProperty(t.getValue().getTableID()).asObject());
         tableOwners.setCellValueFactory(t -> new SimpleStringProperty(t.getValue().getTable().getOwner()));
-        currentPlayersColumn.setCellValueFactory( t -> new SimpleStringProperty(t.getValue().getTable().getPlayersAmount()+"/"+t.getValue().getTable().getMaxPlayers()));
+        currentPlayersColumn.setCellValueFactory( t -> new SimpleStringProperty(t.getValue().getTable().getFilledRatio()));
 
         //tablesList.getItems().setAll(SceneController.tableManager.getTables());
         tablesList.getItems().setAll(SceneController.seansManager.getSeanse());
@@ -162,6 +164,11 @@ public class LoungeView implements  BasicForm {
     }
 
     public void refreshTable() {
+        try {
+            readTables();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         ObservableList<SeansGry> tables = FXCollections.observableArrayList(SceneController.seansManager.getSeanse());
         System.out.println("Observable = " + tables.size());
         tablesList.setItems(tables);

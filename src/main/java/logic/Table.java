@@ -5,10 +5,11 @@ import java.util.List;
 
 public class Table {
     private static int maxID = 0;
+    private String filledRatio;
     private int id;
     private List<Player> players;
     private int maxPlayers;
-    private int playersAmount;
+    public int playersAmount;
     private int nWaiting;
     private String owner;
 
@@ -16,6 +17,7 @@ public class Table {
         this.id = ++maxID;
         this.playersAmount = 0;
         this.maxPlayers = maxPlayers;
+        this.filledRatio = "0/"+maxPlayers;
         this.players = new ArrayList<>();
         this.nWaiting = 0;
         this.owner = owner;
@@ -23,7 +25,7 @@ public class Table {
     public Table(int id, int maxPlayers,int playersAmount, String owner) {
         this.id = id;
         maxID = Math.max(maxID, id);
-        this.playersAmount = playersAmount;
+        this.filledRatio = playersAmount+"/"+maxPlayers;
         this.maxPlayers = maxPlayers;
         this.players = new ArrayList<>();
         this.nWaiting = 0;
@@ -64,10 +66,17 @@ public class Table {
         return res;
 
     }
+    public void playerLeave(String username){
+        for (Player p : players){
+            if (p.getUsername().equals(username)){
+                playersAmount--;
+                players.remove(p);
+            }
+        }
+    }
 
-    public int isAvailable(){
-        if (maxPlayers == playersAmount) return -1;
-        return 1;
+    public boolean isAvailable(){
+        return playersAmount < maxPlayers;
     }
 
     public void setMaxPlayers(int maxPlayers) {
@@ -97,7 +106,7 @@ public class Table {
     }
 
     public boolean isFilled() {
-        return maxPlayers <= playersAmount;
+        return maxPlayers == playersAmount;
     }
 
     public String getOwner() {
@@ -106,5 +115,9 @@ public class Table {
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public String getFilledRatio() {
+        return filledRatio;
     }
 }

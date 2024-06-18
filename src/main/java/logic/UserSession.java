@@ -1,24 +1,23 @@
 package logic;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
+import javax.imageio.ImageIO;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
-public class UserSession implements Runnable{
+public class UserSession extends Thread{
+
     private final int sessionID;
     private BufferedReader in;
     private PrintWriter out;
-    private User activeUser;
     String username;
-    private Table table;
-    private SeansGry seans;
 
     private int correctAnswersGiven;
     private Socket socket;
@@ -39,9 +38,9 @@ public class UserSession implements Runnable{
         this.statement = statement;
     }
 
+
     @Override
     public void run() {
-        System.out.println("USER SESSION");
         String[] client_input;
         while (true){
             client_input = readFromKlient().split(" ");
@@ -60,8 +59,12 @@ public class UserSession implements Runnable{
                         throw new RuntimeException(e);
                     }
                     break;
+                case "CLOSE_STACK":
+                    break;
+                case "MELDUNEK":
+                    break;
                 case "CREATE_TABLE":
-                    createTable(Integer.parseInt(client_input[1]));
+                    createTable(2);
                     break;
                 case "LIST_TABLES":
                     try {
@@ -103,6 +106,18 @@ public class UserSession implements Runnable{
         }
     }
 
+    private void getPFP(String username) throws IOException {
+        OutputStream out = socket.getOutputStream();
+        File file = new File("media/pfps/"+username+".png");
+        if (!file.exists()){
+            file = new File("media/pfps/default.png");
+        }
+        BufferedImage image = ImageIO.read(file);
+        ImageIO.write(image,"PNG",out);
+        out.flush();
+        out.close();
+    }
+
     public String readFromKlient() {
 
         String line = null;
@@ -141,7 +156,6 @@ public class UserSession implements Runnable{
         if (Serwer.authenticate(username, password)){
             sessions.put(username, this);
             writeToKlient("SUCCESS");
-            activeUser = new User(username, password);
             this.username = username;
             //SceneController.openLoungeView();
             return;
@@ -173,8 +187,10 @@ public class UserSession implements Runnable{
         writeToKlient(String.valueOf(seanseList.size()));
         System.out.println("Listing basic info for all tables");
         for (SeansGry seans : seanseList){
-            writeToKlient(seans.getTableID() + " " + seans.getTable().getMaxPlayers() + " " + seans.getTable().getPlayersAmount());
+            writeToKlient(seans.getTableID() + " " + seans.getTable().getMaxPlayers() + " " + seans.getTable().getPlayersAmount()+ " " + seans.getTable().getOwner() );
+
         }
+
     }
 
     /*

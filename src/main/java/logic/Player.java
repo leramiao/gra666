@@ -8,13 +8,17 @@ public class Player {
     private String username;
     public UserSession session;
     private int points;
+    private int globalPoints;
     private int nCards;
+    private int bonus;
 
     public Player(String username, UserSession session) {
         this.username = username;
         this.cards = new Card[6];
         this.nCards = 0;
         this.points = 0;
+        this.globalPoints = 0;
+        this.bonus = 0;
         this.session = session;
     }
 
@@ -33,13 +37,17 @@ public class Player {
         return nCards;
     }
 
-    public boolean isOutOfCards(){
-        return nCards == 0;
+    public int getGlobalPoints() {
+        return globalPoints;
+    }
+    public void addGlobalPoints(int pts) {
+        this.globalPoints += pts;
     }
 
-    public Card peekCard(int i){
-        return cards[i];
+    public void setGlobalPoints(int globalPoints) {
+        this.globalPoints = globalPoints;
     }
+
     public void loseCard(int i){
         cards[i] = null;
         nCards--;
@@ -52,11 +60,21 @@ public class Player {
         return points;
     }
 
-    public void setPoints(int points) {
-        this.points = points;
-    }
     public void addPoints(int points) {
         this.points += points;
+        this.points += bonus;
+        bonus = 0;
+    }
+    public void resetRoundData(){
+        points = 0;
+        bonus = 0;
+        for (int i = 0; i < 6; i++){
+            cards[i] = null;
+        }
+
+    }
+    public void addBonus(int points) {
+        this.bonus += points;
     }
 
     public Card[] getCards() {

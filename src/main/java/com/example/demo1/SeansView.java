@@ -16,26 +16,37 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import logic.Player;
 import logic.Theme;
+import logic.UserSession;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.FutureTask;
 
-public class SeansView {
+public class SeansView implements BasicForm{
+    private static final String ICON_FILENAME = "media/pfps/default.jpg";
+    private static final String CARD_SPRITES_DIR = "media/cards/";
+    private static final String BG_DIR = "media/bg/";
     private Button amReady;
     private Label opponentName;
     private Label playerName;
     private VBox playerSection;
     private VBox opponentSection;
+    private HBox actionButtons;
+    private Button closeStackButton;
     private BorderPane root;
     private ImageView[] playerCards;
     private ImageView[] opponentCards;
     private ImageView[] tableCards;
+    private ImageView stack;
+    private StackPane stackSlot;
     private Stage primaryStage;
     private Image cardBack;
     private Theme theme;
+    private Label pointsLabel;
     int tableID;
+    private VBox sideCards;
+    private Button meldunekButton;
 
     public SeansView(Stage primaryStage, int table) {
         this.theme = Theme.SPACE;
@@ -44,8 +55,6 @@ public class SeansView {
         this.playerCards = new ImageView[6];
         this.opponentCards = new ImageView[6];
         this.tableCards = new ImageView[3];
-        this.playerSection = new VBox();
-        this.opponentSection = new VBox();
     }
 
     public SeansView(Stage primaryStage, int table, Theme theme) {
@@ -55,14 +64,14 @@ public class SeansView {
         this.playerCards = new ImageView[6];
         this.opponentCards = new ImageView[6];
         this.tableCards = new ImageView[3];
-        this.playerSection = new VBox();
-        this.opponentSection = new VBox();
     }
     private void initialize() {
+        this.playerSection = new VBox();
+        this.opponentSection = new VBox();
         VBox buttons = new VBox();
         BackgroundImage bg = null;
         try {
-            bg = new BackgroundImage(new Image(new FileInputStream(String.format("media/bg/%s.png", theme.name()))), BackgroundRepeat.REPEAT,null,null,null);
+            bg = new BackgroundImage(new Image(new FileInputStream(String.format(BG_DIR+"%s.png", theme.name()))), BackgroundRepeat.REPEAT,null,null,null);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -79,23 +88,17 @@ public class SeansView {
 
 
 
-        Image opponentProfileImage = null;
-        Image playerProfileImage = null;
+        Image iconImage = null;
         try {
-            opponentProfileImage = new Image(new FileInputStream("media/pfps/default.jpg"));
-            playerProfileImage = new Image(new FileInputStream("media/pfps/default.jpg"));
+            iconImage = new Image(new FileInputStream(ICON_FILENAME));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
 
-        // Opponent's cards (replace with actual card images as needed)
-        //ImageView[] opponentCards = new ImageView[6];
         for (int i = 0; i < opponentCards.length; i++) {
             opponentCards[i] = new ImageView();
         }
 
-        // Player's cards (replace with actual card images as needed)
-        //ImageView[] playerCards = new ImageView[6];
         for (int i = 0; i < playerCards.length; i++) {
             playerCards[i] = new ImageView();
         }
@@ -117,11 +120,11 @@ public class SeansView {
 
 
         // Profile picture ImageViews
-        ImageView opponentProfileImageView = new ImageView(opponentProfileImage);
+        ImageView opponentProfileImageView = new ImageView(iconImage);
         opponentProfileImageView.setFitWidth(100);
         opponentProfileImageView.setFitHeight(100);
 
-        ImageView playerProfileImageView = new ImageView(playerProfileImage);
+        ImageView playerProfileImageView = new ImageView(iconImage);
         playerProfileImageView.setFitWidth(100);
         playerProfileImageView.setFitHeight(100);
 
@@ -153,18 +156,27 @@ public class SeansView {
         buttons.getChildren().addAll(amReady);
         buttons.setAlignment(Pos.CENTER);
 
+
+        pointsLabel = new Label("0");
+        pointsLabel.setVisible(false);
+
+
+
         // Main layout
         root = new BorderPane();
         root.setPadding(new Insets(10));
         root.setTop(opponentSection);
         root.setBottom(playerSection);
+        root.setLeft(pointsLabel);
         root.setCenter(buttons);
+        initActionButtons();
+        playerSection.getChildren().add(actionButtons);
         root.backgroundProperty().set(new Background(bg));
 
         // Create scene and set on stage
         Scene scene = new Scene(root, 720, 730);
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Card Game Layout Example");
+        primaryStage.setTitle("gra 666");
         primaryStage.show();
         initPlayer();
         gameLoop();
@@ -175,7 +187,6 @@ public class SeansView {
     }
 
     public void acceptPlayer(String username){
-        System.out.println("accepting " + username);
         opponentName.setText(username);
         opponentSection.setVisible(true);
     }
@@ -227,7 +238,8 @@ public class SeansView {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                while (true) {
+                boolean exit = false;
+                while (!exit) {
                     //System.out.println("Waitnig for command GTV");
                     try {
                         String[] command = HelloApplication.client.readFromServer().split(" ");
@@ -249,8 +261,81 @@ public class SeansView {
                                     }
                                 });
                                 break;
+                            case "CLOSE_STACK":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        closeStack();
+                                    }
+                                });
+                                break;
+                            case "STACK_CLOSED":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        closeStackButton.setVisible(false);
+                                        meldunekButton.setVisible(false);
+                                        drawClosedStack();
+                                    }
+                                });
+                                break;
+                            case "EMPTY_STACK":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        stack.setVisible(false);
+                                    }
+                                });
+                                break;
                             case "START":
-                                initGame();
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        initGame();
+                                    }
+                                });
+                                break;
+                            case "SET_POINTS":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        setPoints(Integer.parseInt(command[1]));
+                                    }
+                                });
+                                break;
+                            case "VICTORY":
+                                exit = true;
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showAlert("WIN", "YOU WON");
+                                        primaryStage.close();
+                                        SceneController.openLoungeView();
+                                    }
+                                });
+                                break;
+                            case "LOSS":
+                                exit = true;
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showAlert("LOSS", "YOU LOST");
+                                        primaryStage.close();
+                                        SceneController.openLoungeView();
+                                    }
+                                });
+                                break;
+                            case "SET_ATUT":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            putCard(2,command[1]);
+                                        } catch (FileNotFoundException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
                                 break;
                             case "COLLECT_CARDS":
                                 String[] cards = new String[6];
@@ -317,7 +402,13 @@ public class SeansView {
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
-                                        // waitForCardClick();
+                                        if (command[1].equals("ATTACK")){
+                                            closeStackButton.setDisable(false);
+                                            meldunekButton.setDisable(false);
+                                        } else {
+                                            closeStackButton.setDisable(true);
+                                            meldunekButton.setDisable(true);
+                                        }
                                         unlockCards();
                                     }
                                 });
@@ -325,12 +416,33 @@ public class SeansView {
                             case "PUT_CARD":
                                 putCard(Integer.parseInt(command[1]), command[2]);
                                 break;
+                            case "MELDUNEK":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        removeCard(Integer.parseInt(command[1]) + 3);
+                                        removeCard(Integer.parseInt(command[2]) + 3);
+
+                                    }
+                                });
+                                break;
+                            case "MELDUNEK_ACK":
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        undrawCardForOpponent();
+                                        undrawCardForOpponent();
+
+                                    }
+                                });
+                                break;
                             case "CARD_ACCEPTED":
                                 lockCards();
                                 Platform.runLater(new Runnable() {
                                     @Override
                                     public void run() {
                                         //lockCards();
+                                        closeStackButton.setDisable(true);
                                         int cardIndex = Integer.parseInt(command[1]);
                                         String cardInfo = command[2];
                                         try {
@@ -356,10 +468,33 @@ public class SeansView {
                     }
                     //System.out.println("Processed command GTV");
                 }
+                return null;
             }
         };
         new Thread(task).start();
     }
+
+    private void closeStack() {
+        try {
+            HelloApplication.client.writeToServer("CLOSE_STACK");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void drawClosedStack() {
+        //tableCards[2].setVisible(false);
+        //Image atutowa = tableCards[2].getImage();
+
+        tableCards[2].setRotate(tableCards[2].getRotate() + 90);
+        stackSlot.getChildren().add(tableCards[2]);
+        sideCards.getChildren().remove(tableCards[2]);
+    }
+
+    private void setPoints(int i) {
+        pointsLabel.setText(String.valueOf(i));
+    }
+
     public void undrawCardForOpponent(){
         for (int i = 0; i < 6; i++){
             if (opponentCards[i].isVisible()){
@@ -379,13 +514,19 @@ public class SeansView {
     }
     private void initCards(String[] cards) {
         try {
-            this.cardBack = new Image(new FileInputStream("media/cards/MYSTERY.png"));
+            this.cardBack = new Image(new FileInputStream(CARD_SPRITES_DIR+"MYSTERY.png"));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
         VBox roundCards = new VBox();
         HBox tableMyCards = new HBox();
         HBox tableOppCards = new HBox();
+        sideCards = new VBox();
+
+        this.stack = new ImageView();
+        stackSlot = new StackPane(stack);
+        sideCards.getChildren().addAll(stackSlot,tableCards[2]);
+        stack.setImage(cardBack);
 
         for (int i = 0; i < 6; i++) {
 
@@ -404,7 +545,7 @@ public class SeansView {
         for (int i = 0; i < 6; i++) {
 
             try {
-                putCard(9+i,"media/cards/MYSTERY.png");
+                putCard(9+i,CARD_SPRITES_DIR+"MYSTERY.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -413,8 +554,7 @@ public class SeansView {
 
         for (int i = 0; i < 2; i++) {
             try {
-                //tableCards[i] = new ImageView(new Image(new FileInputStream("media/cards/BLANK.png")));
-                putCard(i,"media/cards/MYSTERY.png");
+                putCard(i,CARD_SPRITES_DIR+"MYSTERY.png");
             } catch (FileNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -424,8 +564,8 @@ public class SeansView {
         }
 
         try {
-            putCard(2, "media/cards/MYSTERY.png");
-            root.setRight(tableCards[2]);
+            putCard(2, CARD_SPRITES_DIR+"MYSTERY.png");
+            root.setRight(sideCards);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -439,34 +579,17 @@ public class SeansView {
         playerSection.getChildren().add(0, tableMyCards);
         opponentSection.getChildren().add(tableOppCards);
     }
-    private Task<Void> waitForCardClick() {
-        Task<Void> task = new Task<>(){
-            @Override
-            protected Void call() throws Exception {
 
-                for (int i = 0; i < 6; i++) {
-                    int cardIndex = i;
-                    playerCards[cardIndex].setOnMouseClicked(event -> {
-                        System.out.println("You clicked the card " + cardIndex);
-                        try {
-                            HelloApplication.client.writeToServer("PUT " + String.valueOf(cardIndex));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-                return null;
-            }
-        };
-
-        new Thread(task).start();
-        return task;
-    }
     public void initGame() {
 
-        System.out.println("remove button !");
+        pointsLabel.setVisible(true);
         amReady.setVisible(false);
+        actionButtons.setVisible(true);
+
+        closeStackButton.setDisable(true);
+        meldunekButton.setDisable(true);
     }
+
     private void takeCard(String cardinfo) {
         for (int i = 0; i < 6; i++) {
             if (!playerCards[i].isVisible()) {
@@ -503,6 +626,42 @@ public class SeansView {
             });
         }
     }
+
+    private void initActionButtons() {
+        actionButtons = new HBox();
+        meldunekButton = new Button("Meldunek");
+        meldunekButton.setOnAction(event -> {
+            meldunek();
+        });
+        closeStackButton = new Button("Zamykam stos");
+        closeStackButton.setOnAction(event -> {
+            closeStack();
+        });
+        Button declare66Button = new Button("66");
+        declare66Button.setOnAction(event -> {
+            declare66();
+        });
+        actionButtons.getChildren().addAll(meldunekButton,closeStackButton,declare66Button);
+        actionButtons.setVisible(false);
+
+    }
+
+    private void declare66() {
+        try {
+            HelloApplication.client.writeToServer("DECLARE66");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void meldunek() {
+        try {
+            HelloApplication.client.writeToServer("MELDUNEK");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void drawCardForOpponent(int n) {
         int ctr = 0;
         for (int i = 0; i < 6; i++) {

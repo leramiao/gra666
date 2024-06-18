@@ -107,7 +107,7 @@ public class Serwer {
     public static void startGameOnTable(int tableID){
         for (SeansGry seans : seansManager.getSeanse()) {
             if (seans.getTableID() == tableID){
-                seans.startGame();
+                seans.run();
                 return ;
             }
         }
@@ -130,7 +130,7 @@ public class Serwer {
 
     public static boolean authenticate(String username, String password) {
         String correct_password = null;
-        String sql = String.format("SELECT password FROM users WHERE username = %s", username);
+        String sql = String.format("SELECT password FROM users WHERE username = \"%s\"", username);
         ResultSet rs = executeQuery(statement, sql);
         try {
             if (rs.next()){

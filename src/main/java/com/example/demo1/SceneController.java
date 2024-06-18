@@ -46,11 +46,6 @@ public class SceneController {
         LoungeView loungeView = new LoungeView();
         loungeView.display();
     }
-
-    public static void openCreateTableView(){
-        CreateTableView createTableView = new CreateTableView(seansManager);
-        createTableView.display();
-    }
     public static void openTableView(Table table){
         SeansView view = new SeansView(primaryStage, table.getId(), theme);
         view.display();
